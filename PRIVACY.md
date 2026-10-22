@@ -7,7 +7,8 @@ ThermoWhisper works offline.
   - the quiet profile (the CPU % you chose in Settings);
   - the UI language;
   - the first-run date;
-  - the donation-reminder flag.
+  - the donation-reminder flag;
+  - the donation link (`DonationUrl` in SecureStorage).
 - The app does not send any of these values anywhere.
 - Autostart: if you turn it on, the app registers itself as a Windows startup item. This setting is kept by Windows, not by the app; the app reads it and changes it only when you use the Settings window.
 - The donation reminder is a local Windows notification, shown once. It does not use the network.

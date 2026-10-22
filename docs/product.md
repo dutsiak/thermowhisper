@@ -10,7 +10,7 @@
   - UC-3 Choose the quiet profile % in Settings (default 10).
   - UC-4 See the real current state (tooltip, Settings), even if another tool changed it.
   - UC-5 Exit from the tray: full speed restored, app closes.
-  - UC-6 Autostart with Windows (does not slow the CPU by itself).
+  - UC-6 Autostart with Windows (does not slow the CPU by itself). A start from the Start menu or a second launch opens the Settings window; an autostart launch stays in the tray.
   - UC-7 Limited mode: compatibility check fails, one popup, writing disabled.
   - UC-8 One donation reminder 7 days after first run.
 - MVP (v1.0): in - tray with Slow Down / Restore Speed toggle, tooltip and two icons, Settings window (quiet profile %, current limit, autostart, language English/Ukrainian, donation banner), restore to 100 % on Exit, limited mode, single instance, signed MSIX on GitHub Releases. Out - presets, schedules, auto-switch by battery or app, temperature/fan graphs, per-app rules, other OS, auto-update, Microsoft Store, telemetry.
