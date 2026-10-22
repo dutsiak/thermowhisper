@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reference copy. Paste into SignPath project -> Artifact configuration.
+     Root is <msix-file> because the workflow uploads with archive: false.
+     MSIX Publisher must equal the certificate subject. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <msix-file>
+    <authenticode-sign />
+  </msix-file>
+</artifact-configuration>

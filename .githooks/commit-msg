@@ -1,0 +1,9 @@
+#!/bin/sh
+# Checks the commit title according to section 12 of GIT STRATEGY (Conventional Commits).
+first=$(grep -v '^#' "$1" | sed '/^[[:space:]]*$/d' | head -n1)
+case "$first" in Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;; esac
+TYPES='feat|fix|refactor|perf|docs|test|ci|chore|build|style|revert'
+if ! echo "$first" | grep -Eq "^($TYPES)(\([^()]+\))?!?: .+"; then
+  echo "commit-msg: the title does not match section 12 of GIT STRATEGY: $first" >&2
+  echo "example: feat: APP-123 Add user registration" >&2; exit 1
+fi
