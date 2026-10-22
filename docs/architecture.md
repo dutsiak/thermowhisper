@@ -125,9 +125,9 @@ Commands (UC = `docs/product.md`). Every write goes through `ApplyCpuLimit`: ref
   values and `rescap:runFullTrust`. `Identity Name` = `Dutsiak.ThermoWhisper` (MAUI fills the placeholder with
   `ApplicationIdGuid`, not `ApplicationId`); `PublisherDisplayName` = Markiian Dutsiak. `Identity Publisher` = the
   signing certificate subject exactly (`CN=User Name` until SignPath approval). Test manifest changes by installing.
-- Signing only in CI by SignPath (`.signpath/artifact-configuration.xml` = reference copy); local MSIX uses the VS dev certificate.
-- Release tag `vX.Y.Z` -> CI builds, signs, creates a **draft** GitHub Release; the manual `deploy-prod` workflow
-  publishes it - the "production deployment" of this app.
+- Signing only in CI by SignPath (`.signpath/artifact-configuration.xml` = reference copy); never sign locally with that certificate; local MSIX uses the VS dev certificate.
+- Tag `vX.Y.Z` -> CI builds, signs, makes a **draft** GitHub Release; manual `deploy-prod` publishes it (the production deploy).
+  Tests that change the power scheme: say the value first, restore the original afterwards.
 
 ## 10. Test builds (dev / stage)
 Tell the PO when a test build is ready. Every push to `dev` / `stage` (after lint and tests) builds an unsigned **test** MSIX; PRs build none.
