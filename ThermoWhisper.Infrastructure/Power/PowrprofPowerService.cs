@@ -9,6 +9,7 @@ namespace ThermoWhisper.Infrastructure.Power;
 /// <summary>Reads and writes the max processor state of the active scheme through powrprof.dll.</summary>
 internal sealed class PowrprofPowerService : IPowerService
 {
+    // The token only stops a call that has not started yet: a native call in progress cannot be cancelled.
     public Task<PowerState> ReadAsync(CancellationToken cancellationToken) =>
         Task.Run(ReadState, cancellationToken);
 
@@ -39,39 +40,42 @@ internal sealed class PowrprofPowerService : IPowerService
         return new CpuLimit((int)value);
     }
 
-    internal (uint Ac, uint Dc) ReadValues() =>
-        WithActiveScheme(scheme =>
-        {
-            ThrowIfFailed(
-                nameof(PowrprofNative.PowerReadACValueIndex),
-                PowrprofNative.PowerReadACValueIndex(
-                    IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, out var ac));
-            ThrowIfFailed(
-                nameof(PowrprofNative.PowerReadDCValueIndex),
-                PowrprofNative.PowerReadDCValueIndex(
-                    IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, out var dc));
+    internal (uint Ac, uint Dc) ReadValues()
+    {
+        var scheme = GetActiveScheme();
 
-            return (ac, dc);
-        });
+        ThrowIfFailed(
+            nameof(PowrprofNative.PowerReadACValueIndex),
+            PowrprofNative.PowerReadACValueIndex(
+                IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, out var ac));
+        ThrowIfFailed(
+            nameof(PowrprofNative.PowerReadDCValueIndex),
+            PowrprofNative.PowerReadDCValueIndex(
+                IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, out var dc));
 
-    /// <summary>Writes AC, then DC, then re-activates the scheme so Windows applies the change.</summary>
-    internal void WriteValues(uint ac, uint dc) =>
-        WithActiveScheme(scheme =>
-        {
-            ThrowIfFailed(
-                nameof(PowrprofNative.PowerWriteACValueIndex),
-                PowrprofNative.PowerWriteACValueIndex(
-                    IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, ac));
-            ThrowIfFailed(
-                nameof(PowrprofNative.PowerWriteDCValueIndex),
-                PowrprofNative.PowerWriteDCValueIndex(
-                    IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, dc));
-            ThrowIfFailed(
-                nameof(PowrprofNative.PowerSetActiveScheme),
-                PowrprofNative.PowerSetActiveScheme(IntPtr.Zero, scheme));
+        return (ac, dc);
+    }
 
-            return true;
-        });
+    /// <summary>
+    /// Writes AC, then DC, then re-activates the scheme so Windows applies the change.
+    /// Not atomic: if DC fails after AC succeeded, AC keeps the new value; the caller sees the exception.
+    /// </summary>
+    internal void WriteValues(uint ac, uint dc)
+    {
+        var scheme = GetActiveScheme();
+
+        ThrowIfFailed(
+            nameof(PowrprofNative.PowerWriteACValueIndex),
+            PowrprofNative.PowerWriteACValueIndex(
+                IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, ac));
+        ThrowIfFailed(
+            nameof(PowrprofNative.PowerWriteDCValueIndex),
+            PowrprofNative.PowerWriteDCValueIndex(
+                IntPtr.Zero, scheme, PowerSettingIds.ProcessorSubgroup, PowerSettingIds.MaxProcessorState, dc));
+        ThrowIfFailed(
+            nameof(PowrprofNative.PowerSetActiveScheme),
+            PowrprofNative.PowerSetActiveScheme(IntPtr.Zero, scheme));
+    }
 
     private PowerState ReadState()
     {
@@ -82,7 +86,8 @@ internal sealed class PowrprofPowerService : IPowerService
             ToCpuLimit(nameof(PowrprofNative.PowerReadDCValueIndex), dc));
     }
 
-    private static T WithActiveScheme<T>(Func<Guid, T> action)
+    /// <summary>Copies the GUID and frees the system buffer at once (the LocalFree result is not actionable).</summary>
+    private static Guid GetActiveScheme()
     {
         ThrowIfFailed(
             nameof(PowrprofNative.PowerGetActiveScheme),
@@ -90,7 +95,7 @@ internal sealed class PowrprofPowerService : IPowerService
 
         try
         {
-            return action(Marshal.PtrToStructure<Guid>(schemePointer));
+            return Marshal.PtrToStructure<Guid>(schemePointer);
         }
         finally
         {

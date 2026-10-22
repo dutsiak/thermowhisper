@@ -9,6 +9,15 @@ namespace ThermoWhisper.Infrastructure.Tests.Power;
 
 public class PowrprofPowerServiceTests
 {
+    private const int Eighty = 80;
+
+    [Fact]
+    public async Task WriteAsync_NullLimit_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => new PowrprofPowerService().WriteAsync(null!, CancellationToken.None));
+    }
+
     [Fact]
     public async Task ReadAsync_ReturnsAcAndDcBetween1And100()
     {
@@ -63,11 +72,11 @@ public class PowrprofPowerServiceTests
 
         try
         {
-            await service.WriteAsync(new CpuLimit(80), CancellationToken.None);
+            await service.WriteAsync(new CpuLimit(Eighty), CancellationToken.None);
 
             var state = await service.ReadAsync(CancellationToken.None);
-            Assert.Equal(new PowerState(new CpuLimit(80), new CpuLimit(80)), state);
-            Assert.Equal(2, CountOccurrences(await ReadPowercfgAsync(), "0x00000050"));
+            Assert.Equal(new PowerState(new CpuLimit(Eighty), new CpuLimit(Eighty)), state);
+            Assert.Equal(2, CountOccurrences(await ReadPowercfgAsync(), Eighty.ToString("x8")));
         }
         finally
         {
