@@ -1,4 +1,4 @@
-# ThermoWhisper - product brief (analyst, 2026-10-22; PO answers in the epic notes PS-1)
+# ThermoWhisper - product brief
 
 ## Product
 - Problem: laptop fans get loud during long demanding tasks, and Windows hides the setting that fixes it ("maximum processor state"). Users need silence quickly, without digging through Power Options.
@@ -15,7 +15,7 @@
   - UC-8 One donation reminder 7 days after first run.
 - MVP (v1.0): in - tray with Slow Down / Restore Speed toggle, tooltip and two icons, Settings window (quiet profile %, current limit, autostart, language English/Ukrainian, donation banner), restore to 100 % on Exit, limited mode, single instance, signed MSIX on GitHub Releases. Out - presets, schedules, auto-switch by battery or app, temperature/fan graphs, per-app rules, other OS, auto-update, Microsoft Store, telemetry.
 - Platforms and constraints: Windows 11 (Windows 10 1809+, minimum 10.0.17763, nice to have), laptops; .NET 10 + MAUI; offline, no telemetry; free, Apache-2.0, public GitHub repo; the system is the source of truth for limit and autostart.
-- UI (analyst decision): simple tray menu (Slow Down / Restore Speed, Settings, Exit) and one Settings window in Windows 11 style; screen flow is written with the Settings epic cards.
+- UI: simple tray menu (Slow Down / Restore Speed, Settings, Exit) and one Settings window in Windows 11 style.
 - Success (v1.0): installs on a clean Windows 11; Slow Down and Restore change the AC and DC values shown in Windows Power Options.
 - Epics / releases (match PLAN.md sprints):
   1. v0.1.0 Core logic and power control (TW-1..TW-7, TW-27, TW-29, TW-30) - medium

@@ -2,7 +2,9 @@
 
 ThermoWhisper is licensed under Apache-2.0 (see `LICENSE` and `NOTICE`). The components below are shipped in the app
 package (MSIX). Each license was checked on the official package page or the project's license file.
-Test-only packages are not shipped and are not listed.
+Test-only packages are not shipped and are not listed. This version lists the direct NuGet packages from
+`Directory.Packages.props` and the bundled assets; transitive packages that the MSIX also ships are not listed yet.
+Versions of the .NET runtime and Windows App SDK are set at build time, not in the repository.
 
 | Component | Version | License | License and source |
 |---|---|---|---|

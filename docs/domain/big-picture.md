@@ -1,6 +1,6 @@
-# ThermoWhisper - Event Storming Big Picture (short mode, drafted by the analyst from the PO answers, 2026-10-22)
+# ThermoWhisper - Event Storming Big Picture (short mode)
 
-Legend: orange = domain event, yellow = actor, pink = external system, neon pink = hotspot (colors from the team template).
+Legend: orange = domain event, yellow = actor, pink = external system, neon pink = hotspot.
 
 ## 1. Chaotic exploration (events)
 - PO (from answers): CPU slowed to the quiet profile; full speed restored; app exited and full speed restored; real state shown; quiet profile changed; autostart enabled or disabled; donation reminder shown.
@@ -43,9 +43,9 @@ Side flows (rows): Autostart enabled / disabled (Windows startup task; may be di
 - Systems: Windows power settings (powrprof API, powercfg fallback) - source of truth for the limit; Windows startup task (autostart); Windows notifications (donation toast); Windows tray (H.NotifyIcon); local app data (MAUI Preferences / SecureStorage: quiet profile, language, first-run date, donation flag).
 
 ## 5. Hotspots
-1. Exit while another tool changed the limit: Exit sets 100 % regardless. Accepted by the PO (Q7); confirm in a test.
+1. Exit while another tool changed the limit: Exit sets 100 % regardless. Accepted by the PO; confirm in a test.
 2. Windows crash, app kill or shutdown while slowed: Exit never runs, the CPU stays slowed (the system keeps the value). Not solved in v1.0; the user clicks Restore Speed. ASSUMPTION: acceptable.
-3. User switches power plan: the limit belongs to the active plan; the new plan may be at 100 %. We only show the real state (Q8), never fight back. Slow Down changes the active plan only.
+3. User switches power plan: the limit belongs to the active plan; the new plan may be at 100 %. We only show the real state, never fight back. Slow Down changes the active plan only.
 4. Limited mode (check failed, no writes): Exit must not try to restore.
 5. App started while the CPU is already limited (earlier crash, or another tool): show the real state; the slowed icon is shown whenever the real limit is below 100 %.
 6. Quiet profile changed while slowed: does Apply re-slow at the new % at once? ASSUMPTION: yes if currently slowed, otherwise it only saves the choice (confirmed: `ChangeQuietProfile`).
