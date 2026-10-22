@@ -118,7 +118,7 @@ Commands (UC = `docs/product.md`). Every write goes through `ApplyCpuLimit`: ref
 - `WindowsPackageType=MSIX`, `SelfContained`, `WindowsAppSDKSelfContained`, `RuntimeIdentifier=win-x64`: only in the
   App .csproj, under the Windows TFM condition. `test.ps1` overrides `WindowsPackageType=None`; `build.ps1` passes
   only output/signing switches. Local run: add `-p:WindowsPackageType=None` (a packaged exe cannot start bare);
-  Visual Studio F5 "Windows Machine" deploys the package. Min Windows 10.0.17763.0 (`TargetPlatformMinVersion`),
+  F5 "Windows Machine" deploys the package (the slnx has the Deploy flag). Min Windows 10.0.17763.0 (`TargetPlatformMinVersion`),
   target 10.0.19041.0. No trimming for now. MSIX version = `ApplicationDisplayVersion` (3 parts) +
   `ApplicationVersion` `0` -> `1.2.3.0`.
 - `Platforms/Windows/Package.appxmanifest`: keep `Identity Version="0.0.0.0"` (MAUI fills it), the `$placeholder$`

@@ -3,7 +3,9 @@
     <Project Path="ThermoWhisper.Application/ThermoWhisper.Application.csproj" Id="d6df29d1-2b2b-4cdc-95b5-57466921f625" />
     <Project Path="ThermoWhisper.Domain/ThermoWhisper.Domain.csproj" Id="1878e815-d324-4fe0-a7f1-38b5419d7bba" />
     <Project Path="ThermoWhisper.Infrastructure/ThermoWhisper.Infrastructure.csproj" Id="e5815488-5ed8-47d9-9bd8-87c2e1b2248f" />
-    <Project Path="ThermoWhisper/ThermoWhisper.csproj" />
+    <Project Path="ThermoWhisper/ThermoWhisper.csproj">
+      <Deploy Solution="Debug|*" />
+    </Project>
   </Folder>
   <Folder Name="/tests/">
     <Project Path="ThermoWhisper.Application.Tests/ThermoWhisper.Application.Tests.csproj" Id="dbeb7de0-3f92-4876-97c8-d83f3beaacb8" />
