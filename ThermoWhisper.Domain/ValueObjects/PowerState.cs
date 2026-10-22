@@ -1,11 +1,11 @@
-namespace ThermoWhisper.Domain.ValueObjects;
+﻿namespace ThermoWhisper.Domain.ValueObjects;
 
 public sealed record PowerState
 {
-    public PowerState(CpuLimit Ac, CpuLimit Dc)
+    public PowerState(CpuLimit ac, CpuLimit dc)
     {
-        this.Ac = Ac ?? throw new ArgumentNullException(nameof(Ac));
-        this.Dc = Dc ?? throw new ArgumentNullException(nameof(Dc));
+        Ac = ac ?? throw new ArgumentNullException(nameof(ac));
+        Dc = dc ?? throw new ArgumentNullException(nameof(dc));
     }
 
     public CpuLimit Ac { get; }

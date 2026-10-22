@@ -1,4 +1,4 @@
-using ThermoWhisper.Domain.ValueObjects;
+﻿using ThermoWhisper.Domain.ValueObjects;
 
 namespace ThermoWhisper.Domain.Tests.ValueObjects;
 
@@ -32,7 +32,7 @@ public class PowerStateTests
     {
         var ex = Assert.Throws<ArgumentNullException>(() => new PowerState(null!, CpuLimit.Full));
 
-        Assert.Equal("Ac", ex.ParamName);
+        Assert.Equal("ac", ex.ParamName);
     }
 
     [Fact]
@@ -40,7 +40,13 @@ public class PowerStateTests
     {
         var ex = Assert.Throws<ArgumentNullException>(() => new PowerState(CpuLimit.Full, null!));
 
-        Assert.Equal("Dc", ex.ParamName);
+        Assert.Equal("dc", ex.ParamName);
+    }
+
+    [Fact]
+    public static void Equality_SameAcAndDc_Equal()
+    {
+        Assert.Equal(CreateState(80, 60), CreateState(80, 60));
     }
 
     private static PowerState CreateState(int ac, int dc) => new(new CpuLimit(ac), new CpuLimit(dc));

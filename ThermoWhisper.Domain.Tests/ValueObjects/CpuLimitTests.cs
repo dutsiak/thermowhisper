@@ -1,4 +1,4 @@
-using ThermoWhisper.Domain.ValueObjects;
+﻿using ThermoWhisper.Domain.ValueObjects;
 
 namespace ThermoWhisper.Domain.Tests.ValueObjects;
 
@@ -44,5 +44,11 @@ public class CpuLimitTests
     public static void Equality_DifferentValue_NotEqual()
     {
         Assert.NotEqual(new CpuLimit(50), new CpuLimit(60));
+    }
+
+    [Fact]
+    public static void ToString_ShowsPercentWithUnit()
+    {
+        Assert.Equal("50 %", new CpuLimit(50).ToString());
     }
 }
