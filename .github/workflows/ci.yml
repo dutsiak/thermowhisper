@@ -1,0 +1,147 @@
+# CI by GIT_STRATEGY_EN.md sections 13 and 19 (GitHub Actions template, adapted for a Windows MAUI app).
+# All logic is in scripts/ci/ and scripts/release/; this file only says when and where to run them.
+# dev/stage "deploy" = build the MSIX and attach it to the workflow run as an artifact (job deploy).
+name: ci
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main, dev, stage, 'release/**', 'chore/Release-v*']
+    tags: ['v*']
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  check:
+    if: ${{ !startsWith(github.ref_name, 'chore/Release-v') }}
+    runs-on: windows-latest
+    defaults: { run: { shell: pwsh } }
+    steps:
+      - uses: actions/checkout@v7
+        with: { lfs: true }
+      - uses: actions/setup-dotnet@v6
+        with: { global-json-file: global.json }
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'scripts/ci/method-length.cs') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - run: dotnet workload install maui-windows
+      - run: ./scripts/ci/lint.ps1
+      - run: ./scripts/ci/test.ps1
+
+  review:
+    # Fork PRs get no secrets, so the reviewer runs only for branches of this repository.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: check
+    runs-on: ubuntu-latest
+    permissions: { contents: read, pull-requests: write }
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: bash scripts/ci/review.sh "origin/$BASE" "$TITLE" > review.md
+        env:
+          BASE: ${{ github.base_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      - run: gh pr comment "$PR" --body-file review.md
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+
+  prepare-release:
+    if: github.event_name == 'push' && startsWith(github.ref_name, 'chore/Release-v')
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - run: |
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          sh scripts/release/prepare-release.sh
+          git push
+
+  deploy:
+    # Every push to dev or stage: build the MSIX and keep it as a workflow-run artifact
+    # (Actions -> the run -> Artifacts). Not a GitHub Release: extra tags would break release-notes.sh.
+    if: github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'stage')
+    needs: check
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.ref_name }}-${{ github.run_number }}
+      UNSIGNED_TEST: 'true'   # installable unsigned test build, docs/architecture.md section 10
+    steps:
+      - uses: actions/checkout@v7
+        with: { lfs: true }
+      - uses: actions/setup-dotnet@v6
+        with: { global-json-file: global.json }
+      - run: dotnet workload install maui-windows
+        shell: pwsh
+      - run: ./scripts/ci/build.ps1
+        shell: pwsh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ThermoWhisper-${{ env.TAG }}-unsigned-test
+          path: dist/*.msix
+          retention-days: 30
+          if-no-files-found: error
+
+  release:
+    # Tag vX.Y.Z: build the MSIX, sign it with SignPath (when configured), create a DRAFT release.
+    # Publishing the draft = production deployment, manual only: workflow deploy-prod.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: windows-latest
+    permissions: { contents: write, actions: read }
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0, lfs: true }
+      - uses: actions/setup-dotnet@v6
+        with: { global-json-file: global.json }
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'scripts/ci/method-length.cs') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - run: dotnet workload install maui-windows
+        shell: pwsh
+      - run: ./scripts/ci/build.ps1
+        shell: pwsh
+      - name: Upload unsigned MSIX
+        id: upload-unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/ThermoWhisper-${{ github.ref_name }}-x64.msix
+          archive: false
+          if-no-files-found: error
+      - name: Sign with SignPath
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          skip-decompress: true
+          wait-for-completion: true
+          output-artifact-directory: signed
+      - name: Create draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sh scripts/release/release-notes.sh "$TAG"
+          if ls signed/*.msix >/dev/null 2>&1; then
+            file=$(ls signed/*.msix | head -n1)
+          else
+            file="dist/ThermoWhisper-$TAG-x64-unsigned.msix"
+            mv "dist/ThermoWhisper-$TAG-x64.msix" "$file"
+          fi
+          gh release create "$TAG" --draft --notes-file release-notes.md "$file"
