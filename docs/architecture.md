@@ -122,8 +122,8 @@ Commands (UC = `docs/product.md`). Every write goes through `ApplyCpuLimit`: ref
   target 10.0.19041.0. No trimming for now. MSIX version = `ApplicationDisplayVersion` (3 parts) +
   `ApplicationVersion` `0` -> `1.2.3.0`.
 - `Platforms/Windows/Package.appxmanifest`: keep `Identity Version="0.0.0.0"` (MAUI fills it), the `$placeholder$`
-  values and `rescap:runFullTrust`. `Identity Name` = `Dutsiak.ThermoWhisper` (MAUI fills the placeholder with
-  `ApplicationIdGuid`, not `ApplicationId`); `PublisherDisplayName` = Markiian Dutsiak. `Identity Publisher` = the
+  values and `rescap:runFullTrust`. `Identity Name` = `Dutsiak.ThermoWhisper` (set by hand: the template
+  placeholder would get `ApplicationIdGuid`, not `ApplicationId`); `PublisherDisplayName` = Markiian Dutsiak. `Identity Publisher` = the
   signing certificate subject exactly (`CN=User Name` until SignPath approval). Test manifest changes by installing.
 - Signing only in CI by SignPath (`.signpath/artifact-configuration.xml` = reference copy); never sign locally with that certificate; local MSIX uses the VS dev certificate.
 - Tag `vX.Y.Z` -> CI builds, signs, makes a **draft** GitHub Release; manual `deploy-prod` publishes it (the production deploy).
