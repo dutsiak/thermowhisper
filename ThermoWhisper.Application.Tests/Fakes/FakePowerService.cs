@@ -6,6 +6,7 @@ namespace ThermoWhisper.Application.Tests.Fakes;
 
 internal sealed class FakePowerService : IPowerService
 {
+    private readonly Lock _lock = new();
     private int _concurrentWrites;
     private int _maxConcurrentWrites;
     private int _readCount;
@@ -32,12 +33,9 @@ internal sealed class FakePowerService : IPowerService
     {
         Interlocked.Increment(ref _readCount);
 
-        if (OtherReadError is not null)
-        {
-            throw OtherReadError;
-        }
+        var error = OtherReadError ?? ReadError;
 
-        return ReadError is not null ? throw ReadError : Task.FromResult(State);
+        return error is not null ? Task.FromException<PowerState>(error) : Task.FromResult(State);
     }
 
     public async Task WriteAsync(CpuLimit limit, CancellationToken cancellationToken)
@@ -53,8 +51,11 @@ internal sealed class FakePowerService : IPowerService
                 throw WriteError;
             }
 
-            Writes.Add(limit);
-            State = new PowerState(limit, limit);
+            lock (_lock)
+            {
+                Writes.Add(limit);
+                State = new PowerState(limit, limit);
+            }
         }
         finally
         {

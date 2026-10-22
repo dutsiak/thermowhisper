@@ -10,6 +10,8 @@ public class QuietProfileTests
     [InlineData(55, 10)]
     [InlineData(0, 10)]
     [InlineData(100, 10)]
+    [InlineData(-1, 10)]
+    [InlineData(int.MinValue, 10)]
     public void FromStored_returns_option_or_default(int? stored, int expected)
     {
         Assert.Equal(expected, QuietProfile.FromStored(stored).Percent);
