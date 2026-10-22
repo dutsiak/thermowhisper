@@ -8,5 +8,6 @@
   <Folder Name="/tests/">
     <Project Path="ThermoWhisper.Application.Tests/ThermoWhisper.Application.Tests.csproj" Id="dbeb7de0-3f92-4876-97c8-d83f3beaacb8" />
     <Project Path="ThermoWhisper.Domain.Tests/ThermoWhisper.Domain.Tests.csproj" Id="8e12a2a6-7734-4450-99e4-ec5f0775076e" />
+    <Project Path="ThermoWhisper.Infrastructure.Tests/ThermoWhisper.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>
