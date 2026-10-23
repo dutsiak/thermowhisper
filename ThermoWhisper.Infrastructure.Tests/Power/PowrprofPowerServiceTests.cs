@@ -65,6 +65,7 @@ public class PowrprofPowerServiceTests
 
     // Opt-in: writes 80 % to AC and DC of the active scheme, then restores the original values.
     [PowerWriteFact]
+    [Trait("Category", "PowerWrite")]
     public async Task WriteAsync_Writes80PercentToAcAndDc_ThenRestoresOriginals()
     {
         var service = new PowrprofPowerService();
