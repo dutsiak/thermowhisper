@@ -21,7 +21,7 @@ public class ToggleSlowDownTests
     private ToggleSlowDown Create()
     {
         var read = new ReadPowerState(_power, _status);
-        return new ToggleSlowDown(read, _settings, new ApplyCpuLimit(_power, _support, read));
+        return new ToggleSlowDown(_support, read, _settings, new ApplyCpuLimit(_power, _support, read));
     }
 
     private static PowerState State(int ac, int dc) => new(new CpuLimit(ac), new CpuLimit(dc));
@@ -83,6 +83,7 @@ public class ToggleSlowDownTests
 
         Assert.Equal(TextKeys.LimitedMode, result.ErrorKey);
         Assert.Empty(_power.Writes);
+        Assert.Equal(0, _power.ReadCount);
     }
 
     [Fact]
