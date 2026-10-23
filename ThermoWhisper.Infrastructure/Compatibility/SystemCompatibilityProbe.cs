@@ -64,10 +64,6 @@ public sealed class SystemCompatibilityProbe : ISystemCompatibilityProbe
         }
     }
 
-    private IReadOnlyList<string> FindMissingExports(IntPtr handle)
-    {
-        return _requiredExports
-            .Where(name => !NativeLibrary.TryGetExport(handle, name, out _))
-            .ToArray();
-    }
+    private IReadOnlyList<string> FindMissingExports(IntPtr handle) =>
+        _requiredExports.Where(name => !NativeLibrary.TryGetExport(handle, name, out _)).ToArray();
 }

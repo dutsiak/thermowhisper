@@ -5,6 +5,8 @@ namespace ThermoWhisper.Infrastructure.Tests.Compatibility;
 /// <summary>Read only: these tests never write power settings. CI runs them on windows-latest.</summary>
 public class SystemCompatibilityProbeTests
 {
+    private static readonly Version MinimumWindowsVersion = new(10, 0, 17763);
+
     // Fixed test input on purpose: it is the spec from the architecture (section 4), not a copy of production data.
     private static readonly string[] SixPowrprofExports =
     [
@@ -27,7 +29,7 @@ public class SystemCompatibilityProbeTests
     {
         var facts = new SystemCompatibilityProbe().GetFacts();
 
-        Assert.True(facts.WindowsVersion >= new Version(10, 0, 17763));
+        Assert.True(facts.WindowsVersion >= MinimumWindowsVersion);
         Assert.True(facts.PowrprofLoaded);
         Assert.Empty(facts.MissingPowrprofExports);
         Assert.True(facts.PowrprofUsable);
