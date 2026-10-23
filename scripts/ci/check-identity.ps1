@@ -1,6 +1,9 @@
 # Guard: automation must commit only as an allowed identity (TW-33).
 # Fails when a tracked workflow, script or hook sets a git user.name / user.email that is not allowed,
 # or writes a Co-authored-by line.
+# Limits: text scan of tracked files under .github, scripts, .githooks only; a non-literal value
+# (user.name "$(whoami)", "$VAR") is reported as not allowed on purpose (use the literal bot identity).
+# $allowedDomains is empty by PO decision; fill it only when the project owns a domain.
 $ErrorActionPreference = 'Stop'
 $allowedEmails = @(
     '41898282+github-actions[bot]@users.noreply.github.com',  # GitHub Actions bot
