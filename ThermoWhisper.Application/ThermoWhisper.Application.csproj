@@ -8,9 +8,4 @@
     <ProjectReference Include="..\ThermoWhisper.Domain\ThermoWhisper.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Abstractions\" />
-    <Folder Include="UseCases\" />
-  </ItemGroup>
-
 </Project>
