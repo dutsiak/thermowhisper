@@ -2,9 +2,10 @@ using ThermoWhisper.Infrastructure.Compatibility;
 
 namespace ThermoWhisper.Infrastructure.Tests.Compatibility;
 
-/// <summary>Read only: these tests never write power settings.</summary>
+/// <summary>Read only: these tests never write power settings. CI runs them on windows-latest.</summary>
 public class SystemCompatibilityProbeTests
 {
+    // Fixed test input on purpose: it is the spec from the architecture (section 4), not a copy of production data.
     private static readonly string[] SixPowrprofExports =
     [
         "PowerGetActiveScheme",
@@ -29,13 +30,14 @@ public class SystemCompatibilityProbeTests
         Assert.True(facts.WindowsVersion >= new Version(10, 0, 17763));
         Assert.True(facts.PowrprofLoaded);
         Assert.Empty(facts.MissingPowrprofExports);
+        Assert.True(facts.PowrprofUsable);
         Assert.True(facts.PowercfgExists);
     }
 
     [Fact]
     public void GetFacts_MissingLibrary_ReportsNotLoadedAndNoExportCheck()
     {
-        var facts = Create("thermowhisper-missing.dll", SixPowrprofExports, ExistingPowercfg).GetFacts();
+        var facts = new SystemCompatibilityProbe("thermowhisper-missing.dll", SixPowrprofExports, ExistingPowercfg).GetFacts();
 
         Assert.False(facts.PowrprofLoaded);
         Assert.Empty(facts.MissingPowrprofExports);
@@ -47,7 +49,7 @@ public class SystemCompatibilityProbeTests
     {
         var exports = SixPowrprofExports.Append("NoSuchExport").ToArray();
 
-        var facts = Create("powrprof.dll", exports, ExistingPowercfg).GetFacts();
+        var facts = new SystemCompatibilityProbe("powrprof.dll", exports, ExistingPowercfg).GetFacts();
 
         Assert.True(facts.PowrprofLoaded);
         Assert.Equal(["NoSuchExport"], facts.MissingPowrprofExports);
@@ -57,13 +59,8 @@ public class SystemCompatibilityProbeTests
     [Fact]
     public void GetFacts_MissingPowercfg_ReportsNotExisting()
     {
-        var facts = Create("powrprof.dll", SixPowrprofExports, MissingPowercfg).GetFacts();
+        var facts = new SystemCompatibilityProbe("powrprof.dll", SixPowrprofExports, MissingPowercfg).GetFacts();
 
         Assert.False(facts.PowercfgExists);
-    }
-
-    private static SystemCompatibilityProbe Create(string powrprofName, IReadOnlyList<string> exports, string powercfgPath)
-    {
-        return new SystemCompatibilityProbe(powrprofName, exports, powercfgPath);
     }
 }
