@@ -112,16 +112,18 @@ jobs:
       - run: dotnet workload install maui-windows
         shell: pwsh
       - run: ./scripts/ci/build.ps1
+        id: build
         shell: pwsh
       - name: Upload unsigned MSIX
         id: upload-unsigned
         uses: actions/upload-artifact@v7
         with:
-          path: dist/ThermoWhisper-${{ github.ref_name }}-x64.msix
+          path: ${{ steps.build.outputs.msix }}
           archive: false
           if-no-files-found: error
       - name: Sign with SignPath
-        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        # Pre-1.0 tags (v0.x.y) are unsigned test packages (build.ps1) and are not signed.
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' && steps.build.outputs.unsigned_test != 'true' }}
         uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -136,12 +138,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          sh scripts/release/release-notes.sh "$TAG"
-          if ls signed/*.msix >/dev/null 2>&1; then
-            file=$(ls signed/*.msix | head -n1)
-          else
-            file="dist/ThermoWhisper-$TAG-x64-unsigned.msix"
-            mv "dist/ThermoWhisper-$TAG-x64.msix" "$file"
-          fi
-          gh release create "$TAG" --draft --notes-file release-notes.md "$file"
+        run: sh scripts/release/create-draft-release.sh "$TAG" "${{ steps.build.outputs.msix }}"
