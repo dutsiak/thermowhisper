@@ -17,7 +17,7 @@ try {
     $suffix = '-unsigned-test'
   }
   dotnet publish ThermoWhisper/ThermoWhisper.csproj -c Release -f net10.0-windows10.0.19041.0 `
-    -p:RuntimeIdentifierOverride=win-x64 -p:WindowsPackageType=MSIX -p:GenerateAppxPackageOnBuild=true `
+    -p:GenerateAppxPackageOnBuild=true `
     -p:AppxPackageSigningEnabled=false -p:AppxPackageDir="$PWD/out/" --nologo --verbosity quiet
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {
