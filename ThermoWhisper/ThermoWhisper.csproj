@@ -24,7 +24,7 @@
     <ApplicationIdGuid>01a11d24-05aa-7e07-a8b6-2bff365cf974</ApplicationIdGuid>
 
     <!-- Versions: ApplicationDisplayVersion is set only by scripts/release/set-version.sh -->
-    <ApplicationDisplayVersion>0.0.0</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>0</ApplicationVersion>
 
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
