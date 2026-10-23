@@ -5,8 +5,7 @@ namespace ThermoWhisper.Infrastructure.Tests.Power;
 
 public class PowercfgOutputParserTests
 {
-    private static readonly string Sample =
-        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Power", "TestData", "powercfg-q-sample.txt"));
+    private const string Sample = PowercfgSample.Output;
 
     [Fact]
     public void Parse_RealSample_ReturnsValues()
