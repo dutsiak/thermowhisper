@@ -20,7 +20,7 @@ case "$file" in
     name=$(basename "$file")
     {
       printf '\n---\n'
-      printf '**Unsigned test build (pre-1.0).** Not signed, for testing only. Install in PowerShell:\n\n'
+      printf '**Unsigned test build (pre-1.0).** Not signed, for testing only. Windows 11 only. Install in PowerShell as administrator:\n\n'
       printf '`Add-AppxPackage -Path .\\%s -AllowUnsigned`\n\n' "$name"
       printf 'Double-click install does not work for unsigned packages. A test install is a separate app from the future signed release.\n'
     } >> release-notes.md
