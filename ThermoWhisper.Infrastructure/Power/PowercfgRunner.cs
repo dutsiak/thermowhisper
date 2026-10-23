@@ -27,7 +27,7 @@ internal sealed class PowercfgRunner
     /// <summary>Returns the standard output when <paramref name="readOutput"/> is set, otherwise an empty string.</summary>
     public async Task<string> RunAsync(IEnumerable<string> arguments, bool readOutput, CancellationToken cancellationToken)
     {
-        using var process = Start(arguments, readOutput);
+        using var process = await Task.Run(() => Start(arguments, readOutput), cancellationToken);
         using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutSource.CancelAfter(_timeout);
 
