@@ -138,4 +138,5 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: sh scripts/release/create-draft-release.sh "$TAG" "${{ steps.build.outputs.msix }}"
+          MSIX: ${{ steps.build.outputs.msix }}
+        run: sh scripts/release/create-draft-release.sh "$TAG" "$MSIX"

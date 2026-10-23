@@ -8,7 +8,7 @@
 # In GitHub Actions the result goes to GITHUB_OUTPUT: msix (path) and unsigned_test (true/false).
 $ErrorActionPreference = 'Stop'
 $tag = if ($env:TAG) { $env:TAG } else { 'local' }
-$unsignedTest = ($env:UNSIGNED_TEST -eq 'true') -or ($tag -match '^v0\.\d+\.\d+')
+$unsignedTest = ($env:UNSIGNED_TEST -eq 'true') -or ($tag -match '^v0\.\d+\.\d+([-+].*)?$')
 if ($env:BUILD_DRY_RUN -eq 'true') { Write-Host "build: tag=$tag unsigned_test=$unsignedTest"; exit 0 }
 $manifest = 'ThermoWhisper/Platforms/Windows/Package.appxmanifest'
 $testOid = 'OID.2.25.311729368913984317654407730594956997722=1'
