@@ -13,7 +13,7 @@ expect() {
 commit() { echo "$1" > "$1.txt"; git add -A; git commit -qm "$1"; }
 
 git init -q -b main "$tmp/work" && cd "$tmp/work" || exit 1
-git config user.name test; git config user.email test@example.test
+git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 commit m1
 git branch dev; git switch -q dev; commit d1
 git switch -q -c feat main; commit f1
