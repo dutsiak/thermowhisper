@@ -3,13 +3,13 @@
     x:Class="ThermoWhisper.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:ThermoWhisper"
+    xmlns:views="clr-namespace:ThermoWhisper.Views"
     xmlns:loc="clr-namespace:ThermoWhisper.Localization"
     xmlns:keys="clr-namespace:ThermoWhisper.Application;assembly=ThermoWhisper.Application"
     Title="{loc:Localize Key={x:Static keys:TextKeys.AppTitle}}">
 
     <ShellContent
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        ContentTemplate="{DataTemplate views:SettingsPage}"
+        Route="SettingsPage" />
 
 </Shell>
