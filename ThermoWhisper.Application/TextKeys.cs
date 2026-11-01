@@ -19,4 +19,13 @@ public static class TextKeys
     public const string PowerControlUnavailable = "Problem_PowerControlUnavailable";
     public const string PowerSchemeUnreadable = "Problem_PowerSchemeUnreadable";
     public const string CompatibilityCheckFailed = "Problem_CheckFailed";
+    public const string SettingsQuietProfileLabel = "Settings_QuietProfileLabel";
+    public const string SettingsCurrentLimitLabel = "Settings_CurrentLimitLabel";
+    public const string SettingsApply = "Settings_Apply";
+    public const string SettingsClose = "Settings_Close";
+    public const string SettingsSaved = "Settings_Saved";
+    public const string SettingsLimitUnknown = "Settings_LimitUnknown";
+    public const string SettingsLimitFull = "Settings_LimitFull";
+    public const string SettingsLimitPercent = "Settings_LimitPercent";
+    public const string SettingsLimitSplit = "Settings_LimitSplit";
 }

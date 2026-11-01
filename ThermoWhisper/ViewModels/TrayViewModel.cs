@@ -139,15 +139,6 @@ public sealed partial class TrayViewModel : ObservableObject
         ExitCommand.NotifyCanExecuteChanged();
     }
 
-    private Task ShowErrorAsync(PowerActionResult result)
-    {
-        var message = _localizer.Get(result.ErrorKey!);
-
-        if (result.ErrorDetail is not null)
-        {
-            message = $"{message}{Environment.NewLine}{Environment.NewLine}{result.ErrorDetail}";
-        }
-
-        return _dialogService.ShowMessageAsync(_localizer.Get(TextKeys.AppTitle), message);
-    }
+    private Task ShowErrorAsync(PowerActionResult result) =>
+        _dialogService.ShowMessageAsync(_localizer.Get(TextKeys.AppTitle), ErrorMessage.Build(result, _localizer));
 }
