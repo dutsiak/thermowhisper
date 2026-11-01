@@ -17,6 +17,7 @@ public sealed partial class TrayViewModel : ObservableObject
     private readonly PowerStatus _status;
     private readonly ReadPowerState _readPowerState;
     private readonly ToggleSlowDown _toggleSlowDown;
+    private readonly RestoreSpeedOnExit _restoreSpeedOnExit;
     private readonly PowerActionGate _gate;
     private readonly IWindowService _windowService;
     private readonly IDialogService _dialogService;
@@ -26,6 +27,7 @@ public sealed partial class TrayViewModel : ObservableObject
         PowerStatus status,
         ReadPowerState readPowerState,
         ToggleSlowDown toggleSlowDown,
+        RestoreSpeedOnExit restoreSpeedOnExit,
         PowerActionGate gate,
         IWindowService windowService,
         IDialogService dialogService,
@@ -34,6 +36,7 @@ public sealed partial class TrayViewModel : ObservableObject
         _status = status;
         _readPowerState = readPowerState;
         _toggleSlowDown = toggleSlowDown;
+        _restoreSpeedOnExit = restoreSpeedOnExit;
         _gate = gate;
         _windowService = windowService;
         _dialogService = dialogService;
@@ -47,6 +50,8 @@ public sealed partial class TrayViewModel : ObservableObject
 
     public string SettingsText => _localizer.Get(TextKeys.TraySettings);
 
+    public string ExitText => _localizer.Get(TextKeys.TrayExit);
+
     /// <summary>Runs on the UI thread on right mouse down, before the tray menu is built on mouse up (TrayMenuOpenBehavior; the library has no menu-open event).</summary>
     [RelayCommand]
     private void PrepareMenu()
@@ -56,10 +61,36 @@ public sealed partial class TrayViewModel : ObservableObject
         RefreshItems();
     }
 
-    [RelayCommand(CanExecute = nameof(CanToggle))]
-    private async Task ToggleAsync()
+    [RelayCommand(CanExecute = nameof(CanRunPowerAction))]
+    private Task ToggleAsync() => RunPowerActionAsync(() => _toggleSlowDown.ExecuteAsync(CancellationToken.None));
+
+    /// <summary>Restore (through the gate), one popup on error, then quit; the quit also happens when the restore or the popup throws.</summary>
+    [RelayCommand(CanExecute = nameof(CanRunPowerAction))]
+    private async Task ExitAsync()
     {
-        var result = await _gate.TryRunAsync(() => _toggleSlowDown.ExecuteAsync(CancellationToken.None));
+        var started = false;
+
+        try
+        {
+            await RunPowerActionAsync(() =>
+            {
+                started = true;
+                return _restoreSpeedOnExit.ExecuteAsync(CancellationToken.None);
+            });
+        }
+        finally
+        {
+            // Not started = another power action runs (the gate said no): do not quit under it.
+            if (started)
+            {
+                _windowService.Quit();
+            }
+        }
+    }
+
+    private async Task RunPowerActionAsync(Func<Task<PowerActionResult>> action)
+    {
+        var result = await _gate.TryRunAsync(action);
 
         if (result is { IsSuccess: false })
         {
@@ -70,12 +101,13 @@ public sealed partial class TrayViewModel : ObservableObject
     [RelayCommand]
     private void OpenSettings() => _windowService.ShowSettings();
 
-    private bool CanToggle() => !_gate.IsBusy;
+    private bool CanRunPowerAction() => !_gate.IsBusy;
 
     private void RefreshItems()
     {
         OnPropertyChanged(nameof(ToggleText));
         ToggleCommand.NotifyCanExecuteChanged();
+        ExitCommand.NotifyCanExecuteChanged();
     }
 
     private Task ShowErrorAsync(PowerActionResult result)

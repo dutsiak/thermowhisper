@@ -25,7 +25,7 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
             .UseNotifyIcon()
-            .ConfigureLifecycleEvents(RunStartupOnLaunch)
+            .ConfigureLifecycleEvents(ConfigureLifecycle)
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -42,13 +42,16 @@ public static class MauiProgram
     }
 
     // OnLaunched runs once per process; AppStartup also guards against a second call.
-    private static void RunStartupOnLaunch(ILifecycleBuilder lifecycle)
+    private static void ConfigureLifecycle(ILifecycleBuilder lifecycle)
     {
 #if WINDOWS
-        lifecycle.AddWindows(windows => windows.OnLaunched((_, _) =>
-            _ = IPlatformApplication.Current!.Services.GetRequiredService<AppStartup>().RunAsync()));
+        lifecycle.AddWindows(windows => windows
+            .OnLaunched((_, _) => _ = Resolve<AppStartup>().RunAsync())
+            .OnWindowCreated(window => Resolve<Platforms.Windows.WindowService>().HideInsteadOfClose(window)));
 #endif
     }
+
+    private static T Resolve<T>() where T : notnull => IPlatformApplication.Current!.Services.GetRequiredService<T>();
 
     private static void RegisterServices(IServiceCollection services)
     {
@@ -71,7 +74,8 @@ public static class MauiProgram
         services.AddTransient<MainPage>();
         services.AddSingleton<ILocalizer, Localization.ResxLocalizer>();
 #if WINDOWS
-        services.AddSingleton<IWindowService, Platforms.Windows.WindowService>();
+        services.AddSingleton<Platforms.Windows.WindowService>();
+        services.AddSingleton<IWindowService>(provider => provider.GetRequiredService<Platforms.Windows.WindowService>());
         services.AddSingleton<IDialogService, Platforms.Windows.Dialogs.MessageBoxDialogService>();
 #endif
     }
