@@ -27,3 +27,19 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}
+
+  # A red `rules` stops the unfinished ci.yml run of the same PR (the long Windows job), scripts/ci/stop-ci-run.sh.
+  # Own job, so only it gets `actions: write`. Not for fork PRs (their token cannot cancel). The rules job stays red, the cancelled run is grey.
+  stop-ci:
+    needs: rules
+    if: ${{ always() && needs.rules.result == 'failure' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions: { contents: read, actions: write }
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - run: sh scripts/ci/stop-ci-run.sh rules "$PR" "$HEAD_SHA"
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ github.token }}
