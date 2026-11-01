@@ -53,6 +53,18 @@ public static class MauiProgram
 
     private static T Resolve<T>() where T : notnull => IPlatformApplication.Current!.Services.GetRequiredService<T>();
 
+    private static void RegisterCompatibilityProbe(IServiceCollection services)
+    {
+#if DEBUG
+        if (DebugTools.ForcedLimitedModeProbe.IsRequested)
+        {
+            services.AddSingleton<ISystemCompatibilityProbe, DebugTools.ForcedLimitedModeProbe>();
+            return;
+        }
+#endif
+        services.AddSingleton<ISystemCompatibilityProbe, SystemCompatibilityProbe>();
+    }
+
     private static void RegisterServices(IServiceCollection services)
     {
         services.AddSingleton<SystemSupport>();
@@ -60,7 +72,7 @@ public static class MauiProgram
         services.AddSingleton<PowerActionGate>();
         services.AddSingleton<IPowerService, PowerService>();
         services.AddSingleton<ISettingsStore, SettingsMauiStorage>();
-        services.AddSingleton<ISystemCompatibilityProbe, SystemCompatibilityProbe>();
+        RegisterCompatibilityProbe(services);
         services.AddSingleton<CheckCompatibility>();
         services.AddSingleton<ReadPowerState>();
         services.AddSingleton<StartApplication>();
