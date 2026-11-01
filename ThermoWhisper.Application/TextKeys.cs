@@ -8,6 +8,9 @@ public static class TextKeys
     public const string TrayRestoreSpeed = "Tray_RestoreSpeed";
     public const string TraySettings = "Tray_Settings";
     public const string TrayExit = "Tray_Exit";
+    public const string TrayFullSpeed = "Tray_FullSpeed";
+    public const string TrayLimit = "Tray_Limit";
+    public const string TrayLimitedMode = "Tray_LimitedMode";
     public const string PowerReadFailed = "Error_PowerReadFailed";
     public const string PowerWriteFailed = "Error_PowerWriteFailed";
     public const string LimitedMode = "Error_LimitedMode";
