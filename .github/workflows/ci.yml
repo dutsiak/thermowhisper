@@ -111,7 +111,7 @@ jobs:
   deploy:
     # Every push to dev or stage: build the MSIX and keep it as a workflow-run artifact
     # (Actions -> the run -> Artifacts). Not a GitHub Release: extra tags would break release-notes.sh.
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'dev' || github.ref_name == 'stage')
+    if: ${{ !cancelled() && needs.check.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'dev' || github.ref_name == 'stage') }}
     needs: check
     runs-on: windows-latest
     env:
@@ -133,7 +133,7 @@ jobs:
   release:
     # Tag vX.Y.Z: build the MSIX, sign it with SignPath (when configured), create a DRAFT release.
     # Publishing the draft = production deployment, manual only: workflow deploy-prod.
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !cancelled() && needs.check.result == 'success' && startsWith(github.ref, 'refs/tags/v') }}
     needs: check
     runs-on: windows-latest
     permissions: { contents: write, actions: read }
