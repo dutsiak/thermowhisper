@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ThermoWhisper</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+
+    <!-- Enable XAML source generation for faster build times and improved performance.
+         This generates C# code from XAML at compile time instead of runtime inflation.
+         To disable, remove this line.
+         For individual files, you can override by setting Inflator metadata:
+           <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
+           <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
+    <MauiXamlInflator>SourceGen</MauiXamlInflator>
+
+    <!-- Display name -->
+    <ApplicationTitle>ThermoWhisper</ApplicationTitle>
+
+    <!-- App Identifier -->
+    <ApplicationId>com.dutsiak.thermowhisper</ApplicationId>
+    <ApplicationIdGuid>01a11d24-05aa-7e07-a8b6-2bff365cf974</ApplicationIdGuid>
+
+    <!-- Versions: ApplicationDisplayVersion is set only by scripts/release/set-version.sh -->
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>0</ApplicationVersion>
+
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <!-- Packaging (docs/architecture.md section 9). scripts/ci/test.ps1 overrides WindowsPackageType=None. -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <SelfContained>true</SelfContained>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Custom Main in Platforms/Windows/Program.cs (single instance) -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- App Icon -->
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+
+    <!-- Splash Screen -->
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+
+    <!-- Images -->
+    <MauiImage Include="Resources\Images\*" />
+
+    <!-- Custom Fonts -->
+    <MauiFont Include="Resources\Fonts\*" />
+
+    <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+    <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+
+    <!-- Tray icons (.ico): H.NotifyIcon.Maui reads them as app assets by file name, e.g. "tray-normal.ico" -->
+    <MauiAsset Include="Resources\TrayIcons\*.ico" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Maui" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="H.NotifyIcon.Maui" />
+    <PackageReference Include="Microsoft.Maui.Controls" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="MauiInfrastructure\Autostart\" />
+    <Folder Include="MauiInfrastructure\Notifications\" />
+    <Folder Include="ViewModels\" />
+    <Folder Include="Views\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ThermoWhisper.Infrastructure\ThermoWhisper.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

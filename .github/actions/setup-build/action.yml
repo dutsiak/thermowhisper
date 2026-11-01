@@ -1,0 +1,16 @@
+# Build tools for the Windows jobs of ci.yml and sync.yml: .NET SDK from global.json, the NuGet cache
+# (the only place of its key) and the heavy-tools guard (scripts/ci/install-tools.ps1). The repository must be checked out first.
+name: Setup build
+description: .NET SDK, NuGet cache and the MAUI workload guard
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-dotnet@v6
+      with: { global-json-file: global.json }
+    - uses: actions/cache@v6
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'scripts/ci/method-length.cs') }}
+        restore-keys: nuget-${{ runner.os }}-
+    - run: ./scripts/ci/install-tools.ps1
+      shell: pwsh

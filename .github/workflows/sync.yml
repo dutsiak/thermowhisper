@@ -1,0 +1,86 @@
+# Automatic sync of main into dev/stage when a task PR has noise (GIT_STRATEGY_EN.md section 2).
+# Three jobs (section 19): git and PR work on ubuntu with nothing installed; Windows (MAUI) only for the merge check
+# and only when the merge is clean; no noise - Windows never starts.
+name: sync
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [dev, stage]
+
+# At workflow level, so it covers all three jobs.
+concurrency:
+  group: sync-${{ github.base_ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  prepare:                          # ubuntu: noise, sync PR (with assignee), trial merge
+    if: ${{ github.head_ref != 'main' && !startsWith(github.head_ref, 'chore/Sync-') }}
+    runs-on: ubuntu-latest
+    permissions: { contents: read, pull-requests: write }
+    outputs:
+      need: ${{ steps.p.outputs.need }}
+      sync_pr: ${{ steps.p.outputs.sync_pr }}
+      base_sha: ${{ steps.p.outputs.base_sha }}
+      main_sha: ${{ steps.p.outputs.main_sha }}
+      tree: ${{ steps.p.outputs.tree }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - id: p
+        run: sh scripts/ci/sync-main.sh "$BASE" "$PR" "$HEAD_SHA"
+        env:
+          MODE: prepare
+          GIT_LFS_SKIP_SMUDGE: 1    # only the tree id of the merge is needed here
+          BASE: ${{ github.base_ref }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ASSIGNEE: ${{ vars.PR_ASSIGNEE || github.event.pull_request.user.login }}
+          GH_TOKEN: ${{ github.token }}
+
+  verify:                           # windows: only the check of the merge result
+    needs: prepare
+    if: needs.prepare.outputs.need == 'verify'
+    runs-on: windows-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0, lfs: true }
+      - uses: ./.github/actions/setup-build
+      # Recreate the merge from the same commits and fail if its tree differs from the one in prepare.
+      - run: sh scripts/ci/sync-main.sh "$BASE" "" ""
+        shell: bash
+        env:
+          MODE: verify
+          BASE: ${{ github.base_ref }}
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          MAIN_SHA: ${{ needs.prepare.outputs.main_sha }}
+          TREE: ${{ needs.prepare.outputs.tree }}
+      - run: ./scripts/ci/lint.ps1
+        shell: pwsh
+      - run: ./scripts/ci/test.ps1
+        shell: pwsh
+
+  finish:                           # ubuntu: merge the sync PR or write the comment
+    needs: [prepare, verify]
+    if: ${{ !cancelled() && needs.prepare.outputs.need != '' }}
+    runs-on: ubuntu-latest
+    permissions: { contents: write, pull-requests: write, actions: write }
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - run: sh scripts/ci/sync-main.sh "$BASE" "$PR" ""
+        env:
+          MODE: finish
+          GIT_LFS_SKIP_SMUDGE: 1
+          BASE: ${{ github.base_ref }}
+          PR: ${{ github.event.pull_request.number }}
+          NEED: ${{ needs.prepare.outputs.need }}
+          SYNC_PR: ${{ needs.prepare.outputs.sync_pr }}
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          MAIN_SHA: ${{ needs.prepare.outputs.main_sha }}
+          VERIFY: ${{ needs.verify.result }}
+          GH_TOKEN: ${{ github.token }}

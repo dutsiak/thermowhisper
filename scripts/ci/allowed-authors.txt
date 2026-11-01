@@ -1,0 +1,3 @@
+# Allowed commit authors (section 12 of GIT STRATEGY). One address per line (check-authors.sh compares e-mail addresses only).
+131253149+mdutsiak@users.noreply.github.com             # repository owner (PO)
+41898282+github-actions[bot]@users.noreply.github.com   # CI/CD on GitHub

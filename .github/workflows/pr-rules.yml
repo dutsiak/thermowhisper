@@ -1,0 +1,25 @@
+# Pull Request title and target branch rules (GIT_STRATEGY_EN.md sections 5, 6, 10, 12).
+# Git and shell logic only: cheapest runner (ubuntu), nothing installed. The logic is in scripts/ci/check-pr-rules.sh.
+# `edited` is here (not in ci.yml): fixing a title or retargeting the base re-checks the rules.
+name: pr-rules
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-rules-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: { contents: read }
+
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: sh scripts/ci/check-pr-rules-test.sh
+      - run: sh scripts/ci/check-pr-rules.sh "$HEAD_REF" "$BASE_REF" "$TITLE"
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
