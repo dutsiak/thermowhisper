@@ -83,6 +83,8 @@ public static class MauiProgram
         services.AddSingleton<LoadSettings>();
         services.AddSingleton<AppStartup>();
         services.AddSingleton<TrayViewModel>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<StatusRefreshLoop>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<Views.SettingsPage>();
         services.AddSingleton<ILocalizer, Localization.ResxLocalizer>();
