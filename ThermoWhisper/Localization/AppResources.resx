@@ -60,4 +60,31 @@
   <data name="Problem_CheckFailed" xml:space="preserve">
     <value>The system check failed unexpectedly.</value>
   </data>
+  <data name="Settings_QuietProfileLabel" xml:space="preserve">
+    <value>Quiet profile (CPU limit when slowed)</value>
+  </data>
+  <data name="Settings_CurrentLimitLabel" xml:space="preserve">
+    <value>Current CPU limit</value>
+  </data>
+  <data name="Settings_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Settings_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Settings_Saved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="Settings_LimitUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Settings_LimitFull" xml:space="preserve">
+    <value>Full speed (100 %)</value>
+  </data>
+  <data name="Settings_LimitPercent" xml:space="preserve">
+    <value>{0} %</value>
+  </data>
+  <data name="Settings_LimitSplit" xml:space="preserve">
+    <value>Plugged in: {0} %, on battery: {1} %</value>
+  </data>
 </root>

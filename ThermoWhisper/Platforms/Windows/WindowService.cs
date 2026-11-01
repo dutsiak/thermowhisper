@@ -11,7 +11,13 @@ public sealed class WindowService : IWindowService
     private TaskbarIcon? _trayIcon;
     private volatile bool _quitting;
 
+    public bool IsSettingsVisible { get; private set; } = true;
+
+    public event EventHandler? SettingsVisibilityChanged;
+
     public void ShowSettings() => MainThread.BeginInvokeOnMainThread(ShowOnUiThread);
+
+    public void Hide() => MainThread.BeginInvokeOnMainThread(HideOnUiThread);
 
     /// <summary>Disposes the tray icon first so no ghost icon stays in the tray, then ends the app.</summary>
     public void Quit() => MainThread.BeginInvokeOnMainThread(QuitOnUiThread);
@@ -31,6 +37,7 @@ public sealed class WindowService : IWindowService
 
         args.Cancel = true;
         sender.Hide();
+        SetVisible(false);
     }
 
     private void QuitOnUiThread()
@@ -40,11 +47,9 @@ public sealed class WindowService : IWindowService
         Microsoft.Maui.Controls.Application.Current?.Quit();
     }
 
-    private static void ShowOnUiThread()
+    private void ShowOnUiThread()
     {
-        var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
-
-        if (window?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
+        if (FindNativeWindow() is not { } nativeWindow)
         {
             return;
         }
@@ -56,5 +61,26 @@ public sealed class WindowService : IWindowService
 
         nativeWindow.AppWindow.Show();
         nativeWindow.Activate();
+        SetVisible(true);
+    }
+
+    private void HideOnUiThread()
+    {
+        if (FindNativeWindow() is not { } nativeWindow)
+        {
+            return;
+        }
+
+        nativeWindow.AppWindow.Hide();
+        SetVisible(false);
+    }
+
+    private static Microsoft.UI.Xaml.Window? FindNativeWindow() =>
+        Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
+
+    private void SetVisible(bool visible)
+    {
+        IsSettingsVisible = visible;
+        SettingsVisibilityChanged?.Invoke(this, EventArgs.Empty);
     }
 }
