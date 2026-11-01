@@ -48,6 +48,7 @@
             <Label Text="{loc:Localize Key={x:Static keys:TextKeys.SettingsQuietProfileLabel}}" />
             <Picker
                 ItemsSource="{Binding QuietProfiles}"
+                IsEnabled="{Binding IsEditable}"
                 SelectedItem="{Binding SelectedQuietProfile}">
                 <Picker.ItemDisplayBinding>
                     <Binding Path="Percent" StringFormat="{}{0} %" x:DataType="domain:CpuLimit" />
@@ -62,7 +63,7 @@
                 <Button Text="{loc:Localize Key={x:Static keys:TextKeys.SettingsClose}}" Command="{Binding CloseCommand}" />
             </HorizontalStackLayout>
 
-            <Label Text="{Binding StatusText}" />
+            <Label Text="{Binding StatusText}" LineBreakMode="WordWrap" />
         </VerticalStackLayout>
     </Grid>
 
