@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using ThermoWhisper.Application;
 using ThermoWhisper.Application.Abstractions;
+using ThermoWhisper.Application.Compatibility;
 using ThermoWhisper.Application.Power;
 using ThermoWhisper.Application.Settings;
 using ThermoWhisper.Application.UseCases;
@@ -16,6 +17,7 @@ namespace ThermoWhisper.ViewModels;
 public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly PowerStatus _status;
+    private readonly SystemSupport _support;
     private readonly LoadSettings _loadSettings;
     private readonly ReadPowerState _readPowerState;
     private readonly ChangeQuietProfile _changeQuietProfile;
@@ -38,6 +40,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public SettingsViewModel(
         PowerStatus status,
+        SystemSupport support,
         LoadSettings loadSettings,
         ReadPowerState readPowerState,
         ChangeQuietProfile changeQuietProfile,
@@ -45,9 +48,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         IWindowService windowService,
         ILocalizer localizer,
         StatusRefreshLoop refreshLoop,
+        AppStartup appStartup,
         ILogger<SettingsViewModel> logger)
     {
         _status = status;
+        _support = support;
         _loadSettings = loadSettings;
         _readPowerState = readPowerState;
         _changeQuietProfile = changeQuietProfile;
@@ -62,17 +67,38 @@ public sealed partial class SettingsViewModel : ObservableObject
         _status.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(RefreshCurrentLimit);
         _gate.BusyChanged += (_, _) => MainThread.BeginInvokeOnMainThread(ApplyCommand.NotifyCanExecuteChanged);
         _windowService.SettingsVisibilityChanged += OnSettingsVisibilityChanged;
+        // Singleton view model: it lives as long as the app, so the subscriptions are never removed.
+        appStartup.Completed += (_, _) => MainThread.BeginInvokeOnMainThread(OnStartupCompleted);
     }
 
     public IReadOnlyList<CpuLimit> QuietProfiles { get; } = QuietProfile.Options;
+
+    /// <summary>False until the startup check passed: in limited mode (and before the check ends) the dropdown and Apply are greyed.</summary>
+    public bool IsEditable => _support.IsSupported;
+
+    /// <summary>The check finished and failed. A missing result (check not finished) is not limited mode.</summary>
+    private bool IsLimitedMode => _support.Result is { IsSupported: false };
 
     /// <summary>Runs on every show: the first display (NavigatedTo) and every later one (SettingsVisibilityChanged).</summary>
     [RelayCommand]
     private async Task LoadAsync()
     {
-        RestartRefresh();
         SelectedQuietProfile = _loadSettings.Execute().QuietProfile;
         StatusText = string.Empty;
+
+        if (IsLimitedMode)
+        {
+            ShowLimitedMode();
+            return;
+        }
+
+        RestartRefresh();
+
+        // Before the check ends there is nothing to read yet: AppStartup does the first read.
+        if (!IsEditable)
+        {
+            return;
+        }
 
         var result = await _readPowerState.ExecuteAsync();
 
@@ -99,7 +125,30 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void Close() => _windowService.Hide();
 
-    private bool CanApply() => SelectedQuietProfile is not null && !_gate.IsBusy;
+    private bool CanApply() => IsEditable && SelectedQuietProfile is not null && !_gate.IsBusy;
+
+    /// <summary>Limited mode: the problems in the status line, no refresh loop, no read; the label keeps the last known value.</summary>
+    private void ShowLimitedMode()
+    {
+        StopRefresh();
+        StatusText = LimitedModeMessage.Build(_support.Result!, _localizer);
+        RefreshCurrentLimit();
+    }
+
+    private void OnStartupCompleted()
+    {
+        OnPropertyChanged(nameof(IsEditable));
+        ApplyCommand.NotifyCanExecuteChanged();
+
+        if (IsLimitedMode)
+        {
+            ShowLimitedMode();
+        }
+        else
+        {
+            RefreshCurrentLimit();
+        }
+    }
 
     private void OnSettingsVisibilityChanged(object? sender, EventArgs e)
     {
