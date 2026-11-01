@@ -47,7 +47,7 @@ public sealed partial class TrayViewModel : ObservableObject
 
     public string SettingsText => _localizer.Get(TextKeys.TraySettings);
 
-    /// <summary>Runs on the UI thread just before the tray menu is built (the library has no menu-open event; this is bound to RightClickCommand).</summary>
+    /// <summary>Runs on the UI thread on right mouse down, before the tray menu is built on mouse up (TrayMenuOpenBehavior; the library has no menu-open event).</summary>
     [RelayCommand]
     private void PrepareMenu()
     {
