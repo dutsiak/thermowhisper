@@ -8,9 +8,14 @@
              x:DataType="vm:TrayViewModel">
 
     <!-- The tray icon must live in a loaded page: H.NotifyIcon.Maui creates the icon on Loaded. -->
+    <ContentPage.Resources>
+        <win:TrayIconConverter x:Key="TrayIconConverter" />
+    </ContentPage.Resources>
+
     <Grid>
         <tb:TaskbarIcon
-            IconSource="tray-normal.ico">
+            IconSource="{Binding IconKind, Converter={StaticResource TrayIconConverter}}"
+            ToolTipText="{Binding TooltipText}">
             <tb:TaskbarIcon.Behaviors>
                 <win:TrayMenuOpenBehavior Command="{Binding PrepareMenuCommand}" />
             </tb:TaskbarIcon.Behaviors>
