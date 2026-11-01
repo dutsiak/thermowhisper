@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $sh = (Get-Command sh -ErrorAction SilentlyContinue).Source
 if (-not $sh) { $sh = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin/sh.exe' }
-foreach ($test in 'ci/check-base-test.sh', 'ci/check-pr-rules-test.sh', 'ci/review-test.sh', 'ci/sync-main-test.sh', 'release/test-changelog.sh') {
+foreach ($test in 'ci/check-base-test.sh', 'ci/check-commit-ids-test.sh', 'ci/check-pr-rules-test.sh', 'ci/review-test.sh', 'ci/sync-main-test.sh', 'release/test-changelog.sh') {
   & $sh "scripts/$test"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
