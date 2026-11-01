@@ -21,33 +21,44 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  check:
-    if: ${{ !startsWith(github.ref_name, 'chore/Release-v') }}
-    runs-on: windows-latest
-    defaults: { run: { shell: pwsh } }
+  git-checks:                       # git logic: ubuntu, nothing installed; a failure here stops Windows from starting
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with: { lfs: true, fetch-depth: 0 }
-      - uses: ./.github/actions/setup-build
-      - run: ./scripts/ci/lint.ps1
-      - run: ./scripts/ci/test.ps1
-      - if: github.event_name == 'pull_request'
-        shell: bash
-        run: sh scripts/ci/check-authors.sh "origin/$BASE"
+        with: { fetch-depth: 0 }
+      - run: sh scripts/ci/check-authors.sh "origin/$BASE"
         env:
           BASE: ${{ github.base_ref }}
-      - if: github.event_name == 'pull_request' && (github.base_ref == 'stage' || github.base_ref == 'main')
-        shell: bash
+      - run: sh scripts/ci/check-base.sh "$BASE" "$HEAD_REF" "$HEAD_SHA"
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      - if: github.base_ref == 'stage' || github.base_ref == 'main'
         run: sh scripts/ci/check-promoted.sh "$BASE" "$HEAD_REF" "$HEAD_SHA"
         env:
           BASE: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
+  check:                            # Windows + MAUI tools: only here
+    needs: git-checks
+    # git-checks is skipped on push, so: not cancelled and not failed (the default "all needs succeeded" would skip this job).
+    if: ${{ !cancelled() && needs.git-checks.result != 'failure' && !startsWith(github.ref_name, 'chore/Release-v') }}
+    runs-on: windows-latest
+    defaults: { run: { shell: pwsh } }
+    steps:
+      - uses: actions/checkout@v7
+        with: { lfs: true }
+      - uses: ./.github/actions/setup-build
+      - run: ./scripts/ci/lint.ps1
+      - run: ./scripts/ci/test.ps1
+
   review:
     # Fork PRs get no secrets, so the reviewer runs only for branches of this repository.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'main' && (github.base_ref == 'dev' || startsWith(github.base_ref, 'release/') || startsWith(github.head_ref, 'chore/Merge-'))
-    needs: check
+    needs: [git-checks, check]
     runs-on: ubuntu-latest
     permissions: { contents: read, pull-requests: write }
     steps:

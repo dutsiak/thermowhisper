@@ -72,7 +72,7 @@ clone "$tmp/c3"
 run_mode "$tmp/c3" MODE=verify BASE_SHA="$base_sha" MAIN_SHA="$main_sha" TREE="$tree"; check "clean: verify recreates the same tree" "$?" "0"
 run_mode "$tmp/c3" MODE=verify BASE_SHA="$base_sha" MAIN_SHA="$main_sha" TREE=0000; check "clean: a different tree fails verify" "$?" "1"
 run_mode "$tmp/c3" MODE=finish NEED=verify SYNC_PR=9 VERIFY=success BASE_SHA="$base_sha" MAIN_SHA="$main_sha"
-check "clean: merged with the checked head" "$(count "merge pr merge 9 --merge --match-head-commit $main_sha")" "1"
+check "clean: merged with the checked head" "$(count "merge pr merge 9 --merge --subject "Merge main into dev" --match-head-commit $main_sha")" "1"
 check "clean: ci.yml dispatched" "$(count 'dispatch workflow run ci.yml --ref dev')" "1"
 
 # 3. the base moved during the check: nothing is merged
