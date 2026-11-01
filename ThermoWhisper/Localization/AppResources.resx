@@ -45,6 +45,9 @@
   <data name="Error_LimitedMode" xml:space="preserve">
     <value>Limited mode: this system is not supported, so the CPU speed limit cannot be changed.</value>
   </data>
+  <data name="Dialog_LimitedModeIntro" xml:space="preserve">
+    <value>ThermoWhisper is running in limited mode. It cannot change the CPU speed limit on this computer:</value>
+  </data>
   <data name="Problem_WindowsTooOld" xml:space="preserve">
     <value>Windows 10 version 1809 or newer is required.</value>
   </data>
