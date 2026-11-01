@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:tb="https://notifyicon.com/"
+             xmlns:loc="clr-namespace:ThermoWhisper.Localization"
+             xmlns:keys="clr-namespace:ThermoWhisper.Application;assembly=ThermoWhisper.Application"
+             xmlns:domain="clr-namespace:ThermoWhisper.Domain.ValueObjects;assembly=ThermoWhisper.Domain"
+             xmlns:vm="clr-namespace:ThermoWhisper.ViewModels"
+             xmlns:win="clr-namespace:ThermoWhisper.Platforms.Windows"
+             x:Class="ThermoWhisper.Views.SettingsPage"
+             x:Name="Page"
+             x:DataType="vm:SettingsViewModel">
+
+    <!-- The tray icon must live in a loaded page: H.NotifyIcon.Maui creates the icon on Loaded. -->
+    <ContentPage.Resources>
+        <win:TrayIconConverter x:Key="TrayIconConverter" />
+    </ContentPage.Resources>
+
+    <ContentPage.Behaviors>
+        <!-- A behavior gets no BindingContext by itself: take the one of the page. -->
+        <toolkit:EventToCommandBehavior
+            BindingContext="{Binding BindingContext, Source={x:Reference Page}, x:DataType=ContentPage}"
+            EventName="NavigatedTo"
+            Command="{Binding LoadCommand}" />
+    </ContentPage.Behaviors>
+
+    <Grid>
+        <tb:TaskbarIcon
+            x:Name="TrayIcon"
+            x:DataType="vm:TrayViewModel"
+            IconSource="{Binding IconKind, Converter={StaticResource TrayIconConverter}}"
+            ToolTipText="{Binding TooltipText}">
+            <tb:TaskbarIcon.Behaviors>
+                <win:TrayMenuOpenBehavior Command="{Binding PrepareMenuCommand}" />
+            </tb:TaskbarIcon.Behaviors>
+            <FlyoutBase.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="{Binding ToggleText}" Command="{Binding ToggleCommand}" />
+                    <MenuFlyoutItem Text="{Binding SettingsText}" Command="{Binding OpenSettingsCommand}" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="{Binding ExitText}" Command="{Binding ExitCommand}" />
+                </MenuFlyout>
+            </FlyoutBase.ContextFlyout>
+        </tb:TaskbarIcon>
+
+        <VerticalStackLayout Padding="24" Spacing="12">
+            <Label Text="{loc:Localize Key={x:Static keys:TextKeys.SettingsQuietProfileLabel}}" />
+            <Picker
+                ItemsSource="{Binding QuietProfiles}"
+                SelectedItem="{Binding SelectedQuietProfile}">
+                <Picker.ItemDisplayBinding>
+                    <Binding Path="Percent" StringFormat="{}{0} %" x:DataType="domain:CpuLimit" />
+                </Picker.ItemDisplayBinding>
+            </Picker>
+
+            <Label Text="{loc:Localize Key={x:Static keys:TextKeys.SettingsCurrentLimitLabel}}" />
+            <Label Text="{Binding CurrentLimitText}" FontAttributes="Bold" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="{loc:Localize Key={x:Static keys:TextKeys.SettingsApply}}" Command="{Binding ApplyCommand}" />
+                <Button Text="{loc:Localize Key={x:Static keys:TextKeys.SettingsClose}}" Command="{Binding CloseCommand}" />
+            </HorizontalStackLayout>
+
+            <Label Text="{Binding StatusText}" />
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentPage>

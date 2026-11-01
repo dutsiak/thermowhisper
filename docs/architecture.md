@@ -40,7 +40,7 @@ scheme. .NET 10, MAUI (Windows only), self-contained MSIX. Read only the section
   (`.UseMauiCommunityToolkit()`); DI only in `MauiProgram.cs`. **No code-behind logic**: a `.xaml.cs` has only
   `InitializeComponent()` and a constructor that gets the view model from DI and sets `BindingContext`.
 - Async load: `EventToCommandBehavior` (NavigatedTo -> `LoadCommand`), page inside `AppShell`. Settings is hidden, not
-  closed, so NavigatedTo fires once: the tray "Settings" command calls `SettingsViewModel.LoadAsync()` on every show.
+  closed, so NavigatedTo fires once: `LoadAsync` runs on every show, signalled by `IWindowService`.
 - Tray (H.NotifyIcon.Maui `TaskbarIcon`; setup, icon format, events only from its README/source), bound to
   `TrayViewModel`: one toggling item (Slow Down / Restore Speed when slowed), Settings, Exit. Tooltip "CPU limit: N %"
   (N = `Shown`) or "Full speed"; two icons (normal / slowed) by `IsSlowed` of the real limit, never an app flag.
