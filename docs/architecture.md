@@ -38,15 +38,15 @@ scheme. .NET 10, MAUI (Windows only), self-contained MSIX. Read only the section
 ## 3. UI rules
 - MVVM: CommunityToolkit.Mvvm `[ObservableProperty]`, `[RelayCommand]`; CommunityToolkit.Maui
   (`.UseMauiCommunityToolkit()`); DI only in `MauiProgram.cs`. **No code-behind logic**: a `.xaml.cs` has only
-  `InitializeComponent()` and a constructor that gets the view model from DI and sets `BindingContext`.
+  `InitializeComponent()` and a constructor that sets the `BindingContext`s from DI (Settings page: its own + the tray icon).
 - Async load: `EventToCommandBehavior` (NavigatedTo -> `LoadCommand`), page inside `AppShell`. Settings is hidden, not
   closed, so NavigatedTo fires once: `LoadAsync` runs on every show, signalled by `IWindowService`.
 - Tray (H.NotifyIcon.Maui `TaskbarIcon`; setup, icon format, events only from its README/source), bound to
   `TrayViewModel`: one toggling item (Slow Down / Restore Speed when slowed), Settings, Exit. Tooltip "CPU limit: N %"
   (N = `Shown`) or "Full speed"; two icons (normal / slowed) by `IsSlowed` of the real limit, never an app flag.
 - **State refresh** (`ReadPowerState` -> `PowerStatus.Changed` -> tray and Settings update on the UI thread): at start,
-  when the tray menu opens, after every write, every 3 min while Settings is visible (`PeriodicTimer` +
-  `CancellationToken` in the Settings view model: start on show, stop on hide). Between reads the tray may be stale.
+  when the tray menu opens, after every write, every 3 min while Settings is visible (`StatusRefreshLoop` in Application,
+  started by the Settings view model on every show, cancelled on hide, one loop at most). Between reads the tray may be stale.
 - **Start** (user, autostart, or second launch) only reads and shows the state; never slows down by itself.
   Single instance: `AppInstance.FindOrRegisterForKey`; a second launch redirects to the first and exits.
   A start from the Start menu and a second launch open the Settings window; an autostart launch stays in the tray

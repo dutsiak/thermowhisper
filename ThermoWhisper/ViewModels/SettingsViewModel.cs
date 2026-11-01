@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using Microsoft.Extensions.Logging;
+
 using ThermoWhisper.Application;
 using ThermoWhisper.Application.Abstractions;
 using ThermoWhisper.Application.Power;
@@ -20,6 +22,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly PowerActionGate _gate;
     private readonly IWindowService _windowService;
     private readonly ILocalizer _localizer;
+    private readonly StatusRefreshLoop _refreshLoop;
+    private readonly ILogger<SettingsViewModel> _logger;
+    private CancellationTokenSource? _refreshCts;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
@@ -38,7 +43,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         ChangeQuietProfile changeQuietProfile,
         PowerActionGate gate,
         IWindowService windowService,
-        ILocalizer localizer)
+        ILocalizer localizer,
+        StatusRefreshLoop refreshLoop,
+        ILogger<SettingsViewModel> logger)
     {
         _status = status;
         _loadSettings = loadSettings;
@@ -47,6 +54,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _gate = gate;
         _windowService = windowService;
         _localizer = localizer;
+        _refreshLoop = refreshLoop;
+        _logger = logger;
 
         RefreshCurrentLimit();
 
@@ -61,6 +70,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadAsync()
     {
+        RestartRefresh();
         SelectedQuietProfile = _loadSettings.Execute().QuietProfile;
         StatusText = string.Empty;
 
@@ -96,6 +106,37 @@ public sealed partial class SettingsViewModel : ObservableObject
         if (_windowService.IsSettingsVisible)
         {
             LoadCommand.Execute(null);
+        }
+        else
+        {
+            StopRefresh();
+        }
+    }
+
+    /// <summary>Always at most one loop: the old one is cancelled first, which also restarts the 3-minute period.</summary>
+    private void RestartRefresh()
+    {
+        StopRefresh();
+        _refreshCts = new CancellationTokenSource();
+        _ = RunRefreshAsync(_refreshCts.Token);
+    }
+
+    private void StopRefresh()
+    {
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _refreshCts = null;
+    }
+
+    private async Task RunRefreshAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _refreshLoop.RunAsync(cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "The Settings refresh loop stopped unexpectedly.");
         }
     }
 
