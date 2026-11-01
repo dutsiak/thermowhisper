@@ -1,34 +1,26 @@
 # Changelog
 ## v0.1.0 - 2026-11-01
 
-### SETUP-1
-- ci: Align hooks, scripts and workflows with the new git strategy
-
 ### TW-1
-- docs: Renumber task IDs
+- feat: (tray) Add tray menu with Slow Down / Restore Speed toggle and PowerActionGate
+- feat: (tray) Register tray services and start the app from a lifecycle event
+- feat: (tray) Read the power state on right mouse down via a behavior
+- feat: (tray) Give the menu-open behavior the icon's binding context
+- fix: (tray) Take the shell title from resources
 
 ### TW-2
-- ci: CI speed, no duplicate runs
-- ci: Empty commit to test run cancel
-- ci: Use throw in install-tools and check the dotnet exit code
+- feat: (tray) Add Exit that restores full speed, and hide on close
 
 ### TW-3
-- ci: Check PR title and base in pr-rules
-- ci: Find sh in Git folder, restrict merge and hotfix bases
+- feat: (tray) Show the real CPU limit in the tray tooltip and icon
 
 ### TW-4
-- ci: Review each head once, pass rulings, pin tool versions
-- ci: Make rulings step safe under pipefail
-
-### TW-5
-- ci: Sync ubuntu first, shared setup-build action
-- ci: Use the bot identity in the sync script test
-- ci: Make the sync script test independent of git defaults
-
-### TW-6
-- ci: Test task order in CHANGELOG and release notes
-- ci: Show git-cliff errors in the changelog test, share the lint loop
+- feat: (tray) Show one limited-mode popup and grey out the toggle
 
 ### Other
-- chore: Add initial project files
+- chore: Initial commit
+- ci: Add check-base and move git checks to a Linux job
+- ci: Make release and deploy run when git-checks is skipped
+- ci: Add check-base test and fix the sync-main test pattern
+- ci: Use the allowed bot identity in check-base-test
 
