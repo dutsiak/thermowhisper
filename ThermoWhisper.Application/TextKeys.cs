@@ -14,6 +14,7 @@ public static class TextKeys
     public const string PowerReadFailed = "Error_PowerReadFailed";
     public const string PowerWriteFailed = "Error_PowerWriteFailed";
     public const string LimitedMode = "Error_LimitedMode";
+    public const string LimitedModeIntro = "Dialog_LimitedModeIntro";
     public const string WindowsTooOld = "Problem_WindowsTooOld";
     public const string PowerControlUnavailable = "Problem_PowerControlUnavailable";
     public const string PowerSchemeUnreadable = "Problem_PowerSchemeUnreadable";
