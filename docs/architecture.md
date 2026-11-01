@@ -52,7 +52,7 @@ scheme. .NET 10, MAUI (Windows only), self-contained MSIX. Read only the section
   A start from the Start menu and a second launch open the Settings window; an autostart launch stays in the tray
   only. The quiet-profile dropdown offers 10-50 % in steps of 10; the default is 10 % (all PO 2026-10-23).
 - Closing Settings = hide (`IWindowService`); only tray "Exit" quits (section 5).
-- Text only from `.resx` (`App/Localization/AppResources.resx` = English, `AppResources.uk.resx`, ...), from the first
+- Text only from `.resx` (`ThermoWhisper/Localization/AppResources.resx` = English, `AppResources.uk.resx`, ...), from the first
   UI task on. Adding a language = one `.resx` file + one entry in the language list.
 
 ## 4. Startup compatibility check
