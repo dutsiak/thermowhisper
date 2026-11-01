@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 
 using ThermoWhisper.Application;
 using ThermoWhisper.Application.Abstractions;
+using ThermoWhisper.Application.Compatibility;
 using ThermoWhisper.Application.Power;
 using ThermoWhisper.Application.UseCases;
 
@@ -15,6 +16,7 @@ public sealed partial class TrayViewModel : ObservableObject
     private static readonly TimeSpan MenuReadTimeout = TimeSpan.FromSeconds(2);
 
     private readonly PowerStatus _status;
+    private readonly SystemSupport _systemSupport;
     private readonly ReadPowerState _readPowerState;
     private readonly ToggleSlowDown _toggleSlowDown;
     private readonly RestoreSpeedOnExit _restoreSpeedOnExit;
@@ -25,6 +27,7 @@ public sealed partial class TrayViewModel : ObservableObject
 
     public TrayViewModel(
         PowerStatus status,
+        SystemSupport systemSupport,
         ReadPowerState readPowerState,
         ToggleSlowDown toggleSlowDown,
         RestoreSpeedOnExit restoreSpeedOnExit,
@@ -34,6 +37,7 @@ public sealed partial class TrayViewModel : ObservableObject
         ILocalizer localizer)
     {
         _status = status;
+        _systemSupport = systemSupport;
         _readPowerState = readPowerState;
         _toggleSlowDown = toggleSlowDown;
         _restoreSpeedOnExit = restoreSpeedOnExit;
@@ -51,6 +55,24 @@ public sealed partial class TrayViewModel : ObservableObject
     public string SettingsText => _localizer.Get(TextKeys.TraySettings);
 
     public string ExitText => _localizer.Get(TextKeys.TrayExit);
+
+    /// <summary>The tray icon kind; the page maps it to the .ico file (Platforms/Windows/TrayIconConverter).</summary>
+    public TrayIconKind IconKind => Appearance.Icon;
+
+    public string TooltipText
+    {
+        get
+        {
+            var appearance = Appearance;
+
+            return appearance.Percent is { } percent
+                ? _localizer.Format(appearance.TooltipKey, percent)
+                : _localizer.Get(appearance.TooltipKey);
+        }
+    }
+
+    private TrayAppearance Appearance =>
+        TrayAppearance.From(_status.Current, isLimitedMode: _systemSupport.Result is { IsSupported: false });
 
     /// <summary>Runs on the UI thread on right mouse down, before the tray menu is built on mouse up (TrayMenuOpenBehavior; the library has no menu-open event).</summary>
     [RelayCommand]
@@ -106,6 +128,8 @@ public sealed partial class TrayViewModel : ObservableObject
     private void RefreshItems()
     {
         OnPropertyChanged(nameof(ToggleText));
+        OnPropertyChanged(nameof(IconKind));
+        OnPropertyChanged(nameof(TooltipText));
         ToggleCommand.NotifyCanExecuteChanged();
         ExitCommand.NotifyCanExecuteChanged();
     }

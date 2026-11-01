@@ -27,6 +27,15 @@
   <data name="Tray_Exit" xml:space="preserve">
     <value>Exit</value>
   </data>
+  <data name="Tray_FullSpeed" xml:space="preserve">
+    <value>Full speed</value>
+  </data>
+  <data name="Tray_Limit" xml:space="preserve">
+    <value>CPU limit: {0} %</value>
+  </data>
+  <data name="Tray_LimitedMode" xml:space="preserve">
+    <value>Limited mode</value>
+  </data>
   <data name="Error_PowerReadFailed" xml:space="preserve">
     <value>Could not read the CPU speed limit.</value>
   </data>
