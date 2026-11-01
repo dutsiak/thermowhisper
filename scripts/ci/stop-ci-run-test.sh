@@ -28,10 +28,10 @@ has() { grep -qF -- "$3" "$tmp/$2" || { echo "FAIL: $1: $2 lacks '$3'"; failed=1
 
 printf '%s\n' "11 $ci in_progress 5" "12 $ci queued 5" "13 $ci completed 5" "14 .github/workflows/sync.yml in_progress 5" \
   "15 .github/workflows/pr-rules.yml in_progress 5" "16 $ci in_progress 6" "17 $ci in_progress 5,6" "18 $ci in_progress 55" "19 $ci in_progress " > "$tmp/runs"
-expect "cancels only unfinished ci.yml runs of this PR" 0 "11 12 17" 5
+expect "cancels only unfinished ci.yml runs of this PR" 0 "11 12" 5
 has "log line names the job and the run" out "job 'rules' failed in PR #5, so the run 11 of ci.yml"
 has "log line says it is not a failure" out "not a failure"
-expect "PR 6 is not mixed up with PR 5 or 55" 0 "16 17" 6
+expect "PR 6 is not mixed up with PR 5, 55 or the run of both (5,6)" 0 "16" 6
 : > "$tmp/runs"
 expect "nothing to cancel" 0 "" 5
 has "nothing to cancel" out "no unfinished run"

@@ -37,6 +37,7 @@ jobs:
     permissions: { contents: read, actions: write }
     steps:
       - uses: actions/checkout@v7
+        with: { persist-credentials: false }
       - run: sh scripts/ci/stop-ci-run.sh rules "$PR" "$HEAD_SHA"
         env:
           PR: ${{ github.event.pull_request.number }}

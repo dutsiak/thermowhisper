@@ -12,7 +12,7 @@ runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$3&event=pull_requ
 stopped=0
 while read -r id path status prs; do
   [ "$path" = ".github/workflows/ci.yml" ] && [ "$status" != "completed" ] || continue
-  case ",$prs," in *",$2,"*) ;; *) continue ;; esac
+  [ "$prs" = "$2" ] || continue            # the run belongs to this PR only (a run lists all open PRs of its branch: "5,6" is not ours)
   if gh run cancel "$id"; then
     echo "stop-ci-run: job '$1' failed in PR #$2, so the run $id of ci.yml (was $status) is cancelled. Grey 'cancelled' here is not a failure: fix '$1', then re-run the cancelled run."
     stopped=$((stopped + 1))
