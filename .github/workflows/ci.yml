@@ -40,6 +40,10 @@ jobs:
           BASE: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      - run: sh scripts/ci/check-attribution.sh commits "$BASE" "$HEAD_SHA"
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       - if: github.base_ref == 'stage' || github.base_ref == 'main'
         run: sh scripts/ci/check-promoted.sh "$BASE" "$HEAD_REF" "$HEAD_SHA"
         env:
