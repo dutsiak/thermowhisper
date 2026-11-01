@@ -12,7 +12,7 @@ $allowedEmails = @(
 $allowedDomains = @()   # domains the project owns (none yet)
 $allowedNames = @('github-actions[bot]', 'MDutsiak')
 
-$selfFiles = @('scripts/ci/check-identity.ps1', 'scripts/ci/check-authors.sh')   # check-authors.sh reads Co-authored-by, never writes it
+$selfFiles = @('scripts/ci/check-identity.ps1', 'scripts/ci/check-authors.sh', 'scripts/ci/check-attribution.sh', 'scripts/ci/check-attribution-test.sh')   # these read or test for Co-authored-by, never write it into a commit
 $files = git ls-files -- .github scripts .githooks | Where-Object { $selfFiles -notcontains $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
 $errors = @()
 foreach ($file in $files) {
