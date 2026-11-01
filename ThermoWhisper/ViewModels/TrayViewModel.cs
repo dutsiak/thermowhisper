@@ -32,6 +32,7 @@ public sealed partial class TrayViewModel : ObservableObject
         ToggleSlowDown toggleSlowDown,
         RestoreSpeedOnExit restoreSpeedOnExit,
         PowerActionGate gate,
+        AppStartup appStartup,
         IWindowService windowService,
         IDialogService dialogService,
         ILocalizer localizer)
@@ -48,6 +49,7 @@ public sealed partial class TrayViewModel : ObservableObject
 
         _status.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(RefreshItems);
         _gate.BusyChanged += (_, _) => MainThread.BeginInvokeOnMainThread(RefreshItems);
+        appStartup.Completed += (_, _) => MainThread.BeginInvokeOnMainThread(RefreshItems);
     }
 
     public string ToggleText => _localizer.Get(_status.Current?.IsSlowed == true ? TextKeys.TrayRestoreSpeed : TextKeys.TraySlowDown);
@@ -83,7 +85,7 @@ public sealed partial class TrayViewModel : ObservableObject
         RefreshItems();
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunPowerAction))]
+    [RelayCommand(CanExecute = nameof(CanToggle))]
     private Task ToggleAsync() => RunPowerActionAsync(() => _toggleSlowDown.ExecuteAsync(CancellationToken.None));
 
     /// <summary>Restore (through the gate), one popup on error, then quit; the quit also happens when the restore or the popup throws.</summary>
@@ -124,6 +126,9 @@ public sealed partial class TrayViewModel : ObservableObject
     private void OpenSettings() => _windowService.ShowSettings();
 
     private bool CanRunPowerAction() => !_gate.IsBusy;
+
+    // Only Slow Down / Restore Speed need a supported system; Exit stays enabled in limited mode and still quits.
+    private bool CanToggle() => _systemSupport.IsSupported && CanRunPowerAction();
 
     private void RefreshItems()
     {
