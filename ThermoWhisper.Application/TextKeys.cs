@@ -1,8 +1,12 @@
 namespace ThermoWhisper.Application;
 
-/// <summary>Resource keys; App/Localization/AppResources.resx must contain every one of them.</summary>
+/// <summary>Resource keys; ThermoWhisper/Localization/AppResources.resx must contain every one of them.</summary>
 public static class TextKeys
 {
+    public const string AppTitle = "App_Title";
+    public const string TraySlowDown = "Tray_SlowDown";
+    public const string TrayRestoreSpeed = "Tray_RestoreSpeed";
+    public const string TraySettings = "Tray_Settings";
     public const string PowerReadFailed = "Error_PowerReadFailed";
     public const string PowerWriteFailed = "Error_PowerWriteFailed";
     public const string LimitedMode = "Error_LimitedMode";

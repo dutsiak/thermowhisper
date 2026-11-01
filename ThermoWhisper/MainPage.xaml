@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ThermoWhisper.MainPage">
+             xmlns:tb="https://notifyicon.com/"
+             xmlns:vm="clr-namespace:ThermoWhisper.ViewModels"
+             x:Class="ThermoWhisper.MainPage"
+             x:DataType="vm:TrayViewModel">
+
+    <!-- The tray icon must live in a loaded page: H.NotifyIcon.Maui creates the icon on Loaded. -->
+    <Grid>
+        <tb:TaskbarIcon
+            IconSource="tray-normal.ico"
+            RightClickCommand="{Binding PrepareMenuCommand}">
+            <FlyoutBase.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="{Binding ToggleText}" Command="{Binding ToggleCommand}" />
+                    <MenuFlyoutItem Text="{Binding SettingsText}" Command="{Binding OpenSettingsCommand}" />
+                </MenuFlyout>
+            </FlyoutBase.ContextFlyout>
+        </tb:TaskbarIcon>
+    </Grid>
+
 </ContentPage>
