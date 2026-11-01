@@ -18,7 +18,7 @@ try_merge() {   # $1 - the commit of the target branch, $2 - the commit of main;
 }
 merge_sync() {  # $1 - the commit of the target branch, $2 - the commit of main that were checked; if they changed meanwhile - the sync will repeat
   git fetch -q origin
-  if [ "$(git rev-parse "origin/$base")" != "$1" ] || ! gh pr merge "$sync" --merge --match-head-commit "$2"; then
+  if [ "$(git rev-parse "origin/$base")" != "$1" ] || ! gh pr merge "$sync" --merge --subject "Merge main into $base" --match-head-commit "$2"; then
     echo "sync: $base or main changed during the check - the sync will repeat on the next Pull Request"; return 0
   fi
   gh workflow run ci.yml --ref "$base"
