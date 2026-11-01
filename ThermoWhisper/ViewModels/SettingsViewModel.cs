@@ -48,8 +48,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         IWindowService windowService,
         ILocalizer localizer,
         StatusRefreshLoop refreshLoop,
-        ILogger<SettingsViewModel> logger,
-        AppStartup appStartup)
+        AppStartup appStartup,
+        ILogger<SettingsViewModel> logger)
     {
         _status = status;
         _support = support;
@@ -67,6 +67,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _status.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(RefreshCurrentLimit);
         _gate.BusyChanged += (_, _) => MainThread.BeginInvokeOnMainThread(ApplyCommand.NotifyCanExecuteChanged);
         _windowService.SettingsVisibilityChanged += OnSettingsVisibilityChanged;
+        // Singleton view model: it lives as long as the app, so the subscriptions are never removed.
         appStartup.Completed += (_, _) => MainThread.BeginInvokeOnMainThread(OnStartupCompleted);
     }
 
@@ -83,12 +84,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     private async Task LoadAsync()
     {
         SelectedQuietProfile = _loadSettings.Execute().QuietProfile;
-        StatusText = BuildLimitedModeText();
+        StatusText = string.Empty;
 
         if (IsLimitedMode)
         {
-            StopRefresh();
-            RefreshCurrentLimit();
+            ShowLimitedMode();
             return;
         }
 
@@ -127,19 +127,26 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private bool CanApply() => IsEditable && SelectedQuietProfile is not null && !_gate.IsBusy;
 
-    private string BuildLimitedModeText() =>
-        _support.Result is { IsSupported: false } result ? LimitedModeMessage.Build(result, _localizer) : string.Empty;
+    /// <summary>Limited mode: the problems in the status line, no refresh loop, no read; the label keeps the last known value.</summary>
+    private void ShowLimitedMode()
+    {
+        StopRefresh();
+        StatusText = LimitedModeMessage.Build(_support.Result!, _localizer);
+        RefreshCurrentLimit();
+    }
 
     private void OnStartupCompleted()
     {
         OnPropertyChanged(nameof(IsEditable));
         ApplyCommand.NotifyCanExecuteChanged();
-        RefreshCurrentLimit();
 
         if (IsLimitedMode)
         {
-            StopRefresh();
-            StatusText = BuildLimitedModeText();
+            ShowLimitedMode();
+        }
+        else
+        {
+            RefreshCurrentLimit();
         }
     }
 
