@@ -9,6 +9,7 @@ namespace ThermoWhisper.Platforms.Windows;
 /// H.NotifyIcon.Maui 2.4.1 has no menu-open event and never runs RightClickCommand. The menu is built on right mouse up
 /// from the items' current state, so this runs <see cref="Command"/> on right mouse down (UI thread, WndProc).
 /// A MAUI behavior gets no BindingContext by itself, so it copies the one of the icon and follows its changes.
+/// It also hands the icon to <see cref="WindowService"/>, which disposes it on Quit.
 /// </summary>
 public sealed class TrayMenuOpenBehavior : Behavior<TaskbarIcon>
 {
@@ -27,6 +28,7 @@ public sealed class TrayMenuOpenBehavior : Behavior<TaskbarIcon>
         BindingContext = bindable.BindingContext;
         bindable.BindingContextChanged += OnIconBindingContextChanged;
         bindable.TrayIcon.MessageWindow.MouseEventReceived += OnMouseEventReceived;
+        IPlatformApplication.Current?.Services.GetService<WindowService>()?.RegisterTrayIcon(bindable);
     }
 
     protected override void OnDetachingFrom(TaskbarIcon bindable)

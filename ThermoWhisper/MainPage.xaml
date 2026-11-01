@@ -18,6 +18,8 @@
                 <MenuFlyout>
                     <MenuFlyoutItem Text="{Binding ToggleText}" Command="{Binding ToggleCommand}" />
                     <MenuFlyoutItem Text="{Binding SettingsText}" Command="{Binding OpenSettingsCommand}" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="{Binding ExitText}" Command="{Binding ExitCommand}" />
                 </MenuFlyout>
             </FlyoutBase.ContextFlyout>
         </tb:TaskbarIcon>
