@@ -1,4 +1,4 @@
-b line 1 changed by Q1
+b line 1 changed by C1
 b line 2 original
 b line 3 original
 b line 4 original
