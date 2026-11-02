@@ -53,7 +53,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, lfs: true }
-      - uses: ./.github/actions/setup-build
       # Recreate the merge from the same commits and fail if its tree differs from the one in prepare.
       - run: sh scripts/ci/sync-main.sh "$BASE" "" ""
         shell: bash
@@ -63,6 +62,8 @@ jobs:
           BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
           MAIN_SHA: ${{ needs.prepare.outputs.main_sha }}
           TREE: ${{ needs.prepare.outputs.tree }}
+      # After the merge on purpose: setup-build reads global.json and the other tool files of the MERGED tree that lint and tests use.
+      - uses: ./.github/actions/setup-build
       - run: ./scripts/ci/lint.ps1
         shell: pwsh
       - run: ./scripts/ci/test.ps1
