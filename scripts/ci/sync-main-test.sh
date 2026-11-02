@@ -14,7 +14,9 @@ cat > "$tmp/bin/gh" <<'STUB'
 #!/bin/sh
 s=$STUB_STATE
 case "$1 $2" in
+  "api "*) cat "$s/runs" 2>/dev/null ;;
   "pr list") [ -f "$s/open" ] && echo 9 ;;
+  "run cancel") echo "cancel $3" >> "$s/calls" ;;
   "pr create") touch "$s/open"; echo "create" >> "$s/calls"; echo https://example.test/pull/9 ;;
   "pr edit") echo "edit $*" >> "$s/calls" ;;
   "pr view") case "$*" in *comments*) cat "$s/comments" 2>/dev/null ;; *) echo https://example.test/pull/9 ;; esac ;;
@@ -25,7 +27,7 @@ esac
 exit 0
 STUB
 chmod +x "$tmp/bin/gh"
-export PATH="$tmp/bin:$PATH" STUB_STATE="$tmp/state" GITHUB_OUTPUT="$tmp/out"
+export PATH="$tmp/bin:$PATH" STUB_STATE="$tmp/state" GITHUB_OUTPUT="$tmp/out" GITHUB_REPOSITORY=o/r STOP_CI_TRIES=1 STOP_CI_SLEEP=0
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.autocrlf GIT_CONFIG_VALUE_0=false
 
 # Repository: a criss-cross between dev and task gives two merge bases (noise); main has one commit that dev does not have.
@@ -43,13 +45,15 @@ git switch -q main; echo m > m.txt; git add -A; git commit -qm M
 git switch -q -c quiet dev; echo x > x.txt; git add -A; git commit -qm X
 git push -q origin main dev task quiet
 
-clone() { git clone -q "$tmp/remote.git" "$1" && mkdir -p "$1/scripts/ci" && cp "$dir/sync-main.sh" "$1/scripts/ci/"; }
+clone() { git clone -q "$tmp/remote.git" "$1" && mkdir -p "$1/scripts/ci" && cp "$dir/sync-main.sh" "$dir/sync-needed.sh" "$dir/check-noise.sh" "$dir/stop-ci-run.sh" "$1/scripts/ci/"; }
 reset_state() { rm -rf "$tmp/state"/*; : > "$tmp/out"; }
 prepare() {   # $1 - the head branch of the task Pull Request, $2 - a folder for the clone (one runner)
   clone "$2"
-  (cd "$2" && MODE=prepare ASSIGNEE=po sh scripts/ci/sync-main.sh dev 5 "$(git rev-parse "origin/$1")") > /dev/null
+  (cd "$2" && MODE=prepare ASSIGNEE=po sh scripts/ci/sync-main.sh dev 5 "$(git rev-parse "origin/$1")") > "$tmp/prepare.log" 2>&1
 }
 get() { sed -n "s/^$1=//p" "$tmp/out"; }
+# text_ok <case>: the comments written by the stub pass the attribution check of check-attribution.sh (text mode)
+text_ok() { TITLE="" BODY=$(cat "$tmp/state/comments") sh "$dir/check-attribution.sh" text > /dev/null 2>&1 || { echo "FAIL: $1: the attribution check flags the comment"; failed=1; }; }
 run_mode() {  # $1 - the folder; the rest - the environment of the job
   (cd "$1" && shift && env "$@" sh scripts/ci/sync-main.sh dev 5 "") > /dev/null 2>&1
 }
@@ -58,9 +62,18 @@ run_mode() {  # $1 - the folder; the rest - the environment of the job
 reset_state; prepare quiet "$tmp/c1"
 check "no noise: no output" "$(size "$tmp/out")" "0"
 check "no noise: no gh calls" "$(size "$tmp/state/calls")" ""
+grep -q 'NOT NEEDED' "$tmp/prepare.log" || { echo "FAIL: no noise: the log lacks NOT NEEDED"; failed=1; }
+check "no noise: no run is stopped" "$(count '^cancel')" "0"
 
 # 2. noise, clean merge: the sync PR is created with the assignee, the fingerprint is rechecked, the sync is merged, ci.yml dispatched
-reset_state; prepare task "$tmp/c2"
+reset_state
+# runs of ci.yml: ours (41), another PR (42), a run of this PR and another PR together (44), the sync run itself (43), a finished run of ours (45)
+printf '%s
+' "41 .github/workflows/ci.yml in_progress 5" "42 .github/workflows/ci.yml in_progress 6" "43 .github/workflows/sync.yml in_progress 5" "44 .github/workflows/ci.yml in_progress 5,6" "45 .github/workflows/ci.yml completed 5" > "$tmp/state/runs"
+prepare task "$tmp/c2"
+grep -q 'sync: NEEDED for PR #5, stopped runs: 41' "$tmp/prepare.log" || { echo "FAIL: clean: the log line of the stop"; failed=1; }
+check "clean: only our unfinished ci run is stopped" "$(grep '^cancel' "$tmp/state/calls" | tr '
+' ' ')" "cancel 41 "
 base_sha=$(get base_sha); main_sha=$(get main_sha); tree=$(get tree)
 check "clean: need" "$(get need)" "verify"
 check "clean: sync_pr" "$(get sync_pr)" "9"
@@ -75,12 +88,19 @@ run_mode "$tmp/c3" MODE=finish NEED=verify SYNC_PR=9 VERIFY=success BASE_SHA="$b
 merged_call="merge pr merge 9 --merge --subject Merge main into dev --match-head-commit $main_sha"   # the stub logs "$*", so the quotes of the call are gone
 check "clean: merged with the checked head and the subject" "$(count "$merged_call")" "1"
 check "clean: ci.yml dispatched" "$(count 'dispatch workflow run ci.yml --ref dev')" "1"
+check "clean: one comment after the sync" "$(count '^comment')" "1"
+grep -q 'git-strategy:sync-done' "$tmp/state/comments" || { echo "FAIL: clean: marker of the done comment"; failed=1; }
+grep -q 'Close pull request' "$tmp/state/comments" && grep -q 'Reopen pull request' "$tmp/state/comments" || { echo "FAIL: clean: the comment must say Close and Reopen"; failed=1; }
+text_ok "clean: done comment"
+run_mode "$tmp/c3" MODE=finish NEED=verify SYNC_PR=9 VERIFY=success BASE_SHA="$base_sha" MAIN_SHA="$main_sha"
+check "clean: a second finish adds no second comment" "$(count '^comment')" "1"
 
 # 3. the base moved during the check: nothing is merged
 reset_state
 git -C "$tmp/work" switch -q dev; echo moved > "$tmp/work/moved.txt"; git -C "$tmp/work" add -A; git -C "$tmp/work" commit -qm moved; git -C "$tmp/work" push -q origin dev
 run_mode "$tmp/c3" MODE=finish NEED=verify SYNC_PR=9 VERIFY=success BASE_SHA="$base_sha" MAIN_SHA="$main_sha"
 check "moved: nothing merged" "$(count '^merge')" "0"
+check "moved: no comment" "$(count '^comment')" "0"
 
 # 4. cancelled check: nothing at all; failing check: one comment, no merge
 reset_state; touch "$tmp/state/open"
@@ -91,6 +111,8 @@ run_mode "$tmp/c3" MODE=finish NEED=verify SYNC_PR=9 VERIFY=failure BASE_SHA="$b
 check "failing check: one comment" "$(count '^comment')" "1"
 check "failing check: no merge" "$(count '^merge')" "0"
 grep -q 'the linter or tests do not pass' "$tmp/state/comments" || { echo "FAIL: failing check: comment text"; failed=1; }
+text_ok "failing check: comment"
+check "failing check: no done comment" "$(grep -c 'sync-done' "$tmp/state/comments")" "0"
 
 # 5. conflict: main and dev change the same file differently; the sync PR already exists and is reused
 reset_state; touch "$tmp/state/open"
@@ -105,6 +127,7 @@ run_mode "$tmp/c5" MODE=finish NEED=conflict SYNC_PR=9
 run_mode "$tmp/c5" MODE=finish NEED=conflict SYNC_PR=9
 check "conflict: one comment" "$(count '^comment')" "1"
 grep -q 'conflict' "$tmp/state/comments" || { echo "FAIL: conflict: comment text"; failed=1; }
+text_ok "conflict: comment"
 check "conflict: no merge" "$(count '^merge')" "0"
 
 [ "$failed" -eq 0 ] && echo "sync-main-test: OK"
