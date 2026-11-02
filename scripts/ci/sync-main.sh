@@ -2,7 +2,7 @@
 # Automatic sync of main into dev or stage, when the task Pull Request has noise (section 2 of GIT STRATEGY). GitHub (gh).
 # $1 - the target branch (dev or stage), $2 - the number of the task Pull Request, $3 - the head of the task Pull Request (commit).
 # MODE (required), three jobs of the workflow sync:
-#   prepare - Linux: noise, sync Pull Request, trial merge; the result - into $GITHUB_OUTPUT (need, sync_pr, base_sha, main_sha, tree);
+#   prepare - Linux: noise (scripts/ci/sync-needed.sh decides), stop the other CI runs of the PR (stop-ci-run.sh), sync Pull Request, trial merge; the result - into $GITHUB_OUTPUT (need, sync_pr, base_sha, main_sha, tree); HEAD_REF - branch of the PR (fetched only if its head commit is missing);
 #   verify  - Windows: recreate the merge from BASE_SHA and MAIN_SHA and compare the fingerprint TREE (lint and tests run after it, as workflow steps);
 #   finish  - Linux: merge the sync Pull Request or write a comment (NEED, SYNC_PR, BASE_SHA, MAIN_SHA, VERIFY - the result of verify).
 # ASSIGNEE - who to put into Assignees of the sync Pull Request (if it fails - the Pull Request is created anyway).
@@ -23,13 +23,18 @@ merge_sync() {  # $1 - the commit of the target branch, $2 - the commit of main 
   fi
   gh workflow run ci.yml --ref "$base"
   echo "sync: main merged into $base (Pull Request #$sync)"
+  link=$(gh pr view "$sync" --json url --jq .url)
+  once "<!-- git-strategy:sync-done -->" "✅ **\`main\` is merged into \`$base\`** ($link)
+The checks of this PR did not start or were stopped while it waited for the sync. To start them again press **Close pull request**, then **Reopen pull request** (or push a commit)."
+}
+once() {        # $1 - the marker, $2 - the text: one comment per task Pull Request and marker
+  if gh pr view "$pr" --json comments --jq '.comments[].body' | grep -qF -- "$1"; then return 0; fi
+  gh pr comment "$pr" --body "$1
+$2"
 }
 comment() {     # $1 - the reason; once per task Pull Request
-  mark="<!-- git-strategy:sync -->"
-  if gh pr view "$pr" --json comments --jq '.comments[].body' | grep -qF -- "$mark"; then return 0; fi
   link=$(gh pr view "$sync" --json url --jq .url)
-  gh pr comment "$pr" --body "$mark
-⚠️ **First sync \`main\` → \`$base\`: $1**
+  once "<!-- git-strategy:sync -->" "⚠️ **First sync \`main\` → \`$base\`: $1**
 The diff of this PR contains files of other tasks (noise). The automatic sync stopped: $link
 Before any actions with this PR:
 1. Resolve the problem: a human - by merging on the computer; an AI agent - via the branch \`chore/Sync-main-into-$base-…\` (section 2 of GIT STRATEGY).
@@ -52,8 +57,14 @@ finish)
   ;;
 prepare)
   git fetch -q origin
-  if sh scripts/ci/check-noise.sh "origin/$base" "$head" 2>/dev/null; then echo "sync: no noise"; exit 0; fi
-  if git merge-base --is-ancestor origin/main "origin/$base"; then echo "sync: main is already in $base"; exit 0; fi
+  # the PR head is a branch of this repository (fork PRs never get here); if its commit is not fetched yet, fetch that one branch by name
+  git cat-file -e "$head^{commit}" 2>/dev/null || [ -z "$HEAD_REF" ] || git fetch -q origin "refs/heads/$HEAD_REF" 2>/dev/null || true
+  verdict=$(sh scripts/ci/sync-needed.sh "$base" "$head") || { echo "sync: sync-needed.sh failed for PR #$pr" >&2; exit 1; }   # the one place of the rule
+  if [ "$(printf '%s\n' "$verdict" | head -n 1)" != NEEDED ]; then echo "sync: $(printf '%s\n' "$verdict" | tr '\n' ' ')"; exit 0; fi
+  # the PR cannot be merged before the sync: stop the other CI runs of this PR (same PR and head commit only)
+  : "${STOP_CI_TRIES:=2}" "${STOP_CI_SLEEP:=5}"; export STOP_CI_TRIES STOP_CI_SLEEP   # a conflicting PR has no ci run at all: do not wait long for one
+  stopped=$(sh scripts/ci/stop-ci-run.sh sync "$pr" "$head" 2>&1 | sed -n 's/.*the run \([0-9][0-9]*\) of ci.yml.*/\1/p' | tr '\n' ' ') || true
+  echo "sync: NEEDED for PR #$pr, stopped runs: ${stopped:-none}"
   bot
   sync=$(gh pr list --base "$base" --head main --state open --json number --jq '.[0].number // empty')
   if [ -z "$sync" ]; then
