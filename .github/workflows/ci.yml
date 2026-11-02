@@ -54,8 +54,7 @@ jobs:
   check:                            # Windows + MAUI tools: only here
     needs: git-checks
     # git-checks is skipped on push, so: not cancelled and not failed (the default "all needs succeeded" would skip this job).
-    # TEMPORARY, TW-23, restore with TW-24: the leading `false &&` switches off ALL Windows jobs (deploy and release need this job and are skipped with it).
-    if: ${{ false && !cancelled() && needs.git-checks.result != 'failure' && !startsWith(github.ref_name, 'chore/Release-v') }}
+    if: ${{ !cancelled() && needs.git-checks.result != 'failure' && !startsWith(github.ref_name, 'chore/Release-v') }}
     runs-on: windows-latest
     defaults: { run: { shell: pwsh } }
     steps:
@@ -67,8 +66,7 @@ jobs:
 
   review:
     # Fork PRs get no secrets, so the reviewer runs only for branches of this repository.
-    # TEMPORARY, TW-23, restore with TW-24: `check` is skipped, so this job must not wait for its success (it still stops if git-checks or check failed).
-    if: ${{ !cancelled() && needs.git-checks.result == 'success' && needs.check.result != 'failure' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'main' && (github.base_ref == 'dev' || startsWith(github.base_ref, 'release/') || startsWith(github.head_ref, 'chore/Merge-')) }}
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'main' && (github.base_ref == 'dev' || startsWith(github.base_ref, 'release/') || startsWith(github.head_ref, 'chore/Merge-'))
     needs: [git-checks, check]
     runs-on: ubuntu-latest
     permissions: { contents: read, pull-requests: write }
@@ -105,13 +103,6 @@ jobs:
         env:
           PR: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ github.token }}
-
-  # TEMPORARY, TW-23, restore with TW-24: a tag v* must never look like a good release while the Windows jobs are off, so it fails loudly here.
-  windows-off-tag-guard:
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "::error::Windows CI is switched off (TW-23). No release is built from this tag. Restore it with TW-24 first."; exit 1
 
   prepare-release:
     if: github.event_name == 'push' && startsWith(github.ref_name, 'chore/Release-v')
