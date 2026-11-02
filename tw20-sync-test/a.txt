@@ -1,7 +1,7 @@
 a line 1 changed by P1
 a line 2 changed by P2
 a line 3 changed by P5
-a line 4 original
+a line 4 changed by P6
 a line 5 changed by P3
 a line 6 original
 a line 7 changed by C1b
