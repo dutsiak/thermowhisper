@@ -1,3 +1,0 @@
-a C2
-a line2
-a line3
