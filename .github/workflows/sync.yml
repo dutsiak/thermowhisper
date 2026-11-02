@@ -1,9 +1,12 @@
 # Automatic sync of main into dev/stage when a task PR has noise (GIT_STRATEGY_EN.md section 2).
 # Three jobs (section 19): git and PR work on ubuntu with nothing installed; Windows (MAUI) only for the merge check
 # and only when the merge is clean; no noise - Windows never starts.
+# Trigger pull_request_target (TW-20): the platform starts no pull_request workflow for a PR with a merge conflict, and the sync is needed exactly then.
+# pull_request_target runs with the default branch (checkout without ref), so NO job here checks out, builds or runs code of the PR:
+# the PR head is only a commit id for the noise rule (git read only), PR text and names go only through env. Same-repo PRs into dev and stage only.
 name: sync
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
     branches: [dev, stage]
 
@@ -18,9 +21,9 @@ env:
 
 jobs:
   prepare:                          # ubuntu: noise, sync PR (with assignee), trial merge
-    if: ${{ github.head_ref != 'main' && !startsWith(github.head_ref, 'chore/Sync-') }}
+    if: ${{ github.head_ref != 'main' && !startsWith(github.head_ref, 'chore/Sync-') && github.event.pull_request.head.repo.full_name == github.repository && (github.base_ref == 'dev' || github.base_ref == 'stage') }}
     runs-on: ubuntu-latest
-    permissions: { contents: read, pull-requests: write }
+    permissions: { contents: read, pull-requests: write, actions: write }   # actions: write only to stop the other CI runs of this PR (stop-ci-run.sh)
     outputs:
       need: ${{ steps.p.outputs.need }}
       sync_pr: ${{ steps.p.outputs.sync_pr }}
@@ -38,6 +41,7 @@ jobs:
           BASE: ${{ github.base_ref }}
           PR: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
           ASSIGNEE: ${{ vars.PR_ASSIGNEE || github.event.pull_request.user.login }}
           GH_TOKEN: ${{ github.token }}
 
